@@ -1,0 +1,4 @@
+# Django stuff
+Django==5.1.9
+django-ckeditor-5==0.2.17
+django-bootstrap5==25.3

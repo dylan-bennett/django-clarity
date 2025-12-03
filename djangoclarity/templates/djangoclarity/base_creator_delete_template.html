@@ -1,0 +1,49 @@
+{% extends "base_vue.html" %}
+
+{% block body_class %}{% endblock body_class %}
+
+{% block title %}
+{{ super() }} | {{ view.model._meta.verbose_name|title }} Creator Delete
+{% endblock %}
+
+{% block content %}
+<div id="app" v-cloak>
+  <b-container class="py-3">
+    <b-form method="post">
+      {% csrf_token %}
+      <!-- Page header -->
+      <div class="d-flex align-items-center justify-content-between w-100 mb-3">
+        <h1>{{ view.model._meta.verbose_name|title }} Creator Delete</h1>
+        <div class="d-flex align-items-center">
+          <a href="{{ index_url }}" class="mr-2">Back To Index</a>
+        </div>
+      </div>
+
+      <!-- Confirmation text -->
+      <p>Are you sure you want to delete "{{ object }}"?</p>
+      <p><strong>WARNING: THIS CANNOT BE UNDONE!</strong></p>
+
+      <!-- Buttons at the bottom -->
+      <div class="d-flex align-items-center justify-content-end w-100">
+        <a href="{{ index_url }}" class="mr-3">Cancel</a>
+        <b-button variant="danger" type="submit">Confirm</b-button>
+      </div>
+    </b-form>
+  </b-container>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script>
+const app = new Vue({
+  el: "#app",
+  delimiters: ["[[", "]]"],
+  data() {
+    return {
+      items: context.items,
+      fields: context.fields,
+    }
+  }
+});
+</script>
+{% endblock scripts %}
