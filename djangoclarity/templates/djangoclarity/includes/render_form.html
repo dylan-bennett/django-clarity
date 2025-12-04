@@ -1,0 +1,19 @@
+<div class="row">
+  {# Show only the visible fields. Use `hidden_fields()` to see the hidden ones #}
+  {% for field in visible_fields %}
+    {# Render each field as half the row, unless it's on its own row, in which case it's the whole row #}
+    <div class="col-12 col-md-{{ field.col_md_width }} mb-2">
+      {% include "djangoclarity/includes/render_field.html" with field=field only %}
+    </div>
+  {% endfor %}
+</div>
+
+{# If there are no visible fields to render, then display a message #}
+{% if has_visible_fields == False %}
+  No {{ model_verbose_name|title }} information to display
+{% endif %}
+
+{# We still need to render the hidden fields, otherwise they won't be included in the form #}
+{% for hidden_field in hidden_fields %}
+  {{ hidden_field }}
+{% endfor %}

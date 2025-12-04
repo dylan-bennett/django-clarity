@@ -1,0 +1,14 @@
+{# Render the field's label and add a red asterisk if the field is required #}
+{{ field.label_tag }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+
+{# Render the form input field with Bootstrap styling (if other styling is not provided).
+The field type (text, select, checkbox etc) is determined automatically by Django #}
+{{ field.as_widget }}
+
+{# If the field has help text, display it below the input with proper accessibility attributes #}
+{% if field.help_text %}
+  <small tabindex="-1" class="form-text text-muted" id="{{ field.auto_id }}_helptext">{{ field.help_text|safe }}</small>
+{% endif %}
+
+{# Display any validation errors for this field with Bootstrap's invalid-feedback styling #}
+<div class="d-block invalid-feedback">{{ field.errors }}</div>

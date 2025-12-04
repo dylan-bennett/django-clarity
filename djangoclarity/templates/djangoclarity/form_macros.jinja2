@@ -1,0 +1,110 @@
+{# Jinja2 macro to render a form field #}
+{% macro render_field(field) %}
+  {# Render the field's label and add a red asterisk if the field is required #}
+  {{ field.label_tag() }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+
+  {# Render the form input field with Bootstrap styling (if other styling is not provided).
+  The field type (text, select, checkbox etc) is determined automatically by Django #}
+  {{ field.as_widget(attrs={"class": field.field.widget.attrs.get("class", "form-control")}) }}
+
+  {# If the field has help text, display it below the input with proper accessibility attributes #}
+  {% if field.help_text %}
+    <small tabindex="-1" class="form-text text-muted" id="{{ field.auto_id }}_helptext">{{ field.help_text|safe }}</small>
+  {% endif %}
+
+  {# Display any validation errors for this field with Bootstrap's invalid-feedback styling #}
+  <div class="d-block invalid-feedback">{{ field.errors }}</div>
+{% endmacro %}
+
+
+{# Jinja2 macro to render a form #}
+{% macro render_form(form, is_formset_form=False) %}
+  <b-row>
+    {# Show only the visible fields. Use `hidden_fields()` to see the hidden ones #}
+    {% for field in form.visible_fields() if not is_formset_form or (is_formset_form and field.name != "DELETE") %}
+      {# Check for the column width attribute. If not there, default to 6 cols for anything except the last element in an odd-length list #}
+      {% set col_md_width = field.field.widget.attrs.get("col_md_width", "12" if loop.length is odd and loop.last else "6") %}
+
+      {# Render each field as half the row, unless it's on its own row, in which case it's the whole row #}
+      <b-col cols="12" md="{{ col_md_width }}" class="mb-2">
+        {{ render_field(field) }}
+      </b-col>
+    {% endfor %}
+  </b-row>
+
+  {# If there are no visible fields to render, then display a message #}
+  {% if form.visible_fields()|length == 0 %}
+    No {{ form._meta.model._meta.verbose_name|title }} information to display
+  {% endif %}
+
+  {# We still need to render the hidden fields, otherwise they won't be included in the form #}
+  {% for hidden_field in form.hidden_fields() %}
+    {{ hidden_field }}
+  {% endfor %}
+{% endmacro %}
+
+
+{# Jinja2 macro to render a form for a formset #}
+{% macro render_formset_form(formset_form, new_form=False) %}
+  {# Delete checkbox positioned at the top #}
+  {% if formset_form.DELETE and not new_form %}
+    <div class="mb-3 d-flex align-items-center">
+      <b-form-checkbox name="{{ formset_form.DELETE.html_name }}" id="{{ formset_form.DELETE.auto_id }}" class="text-danger">Select and click Update to delete this {{ formset_form._meta.model._meta.verbose_name|title }}</b-form-checkbox>
+    </div>
+  {% endif %}
+
+  {# Render the form #}
+  {{ render_form(formset_form, is_formset_form=True) }}
+
+  {# Render an inline formset, if this formset_form has its own formset (attribute name: `inline_formset`) #}
+  {% if formset_form.inline_formset %}
+    {{ render_inline_formset(formset_form.inline_formset) }}
+  {% endif %}
+{% endmacro %}
+
+
+{# Jinja2 macro to render a formset #}
+{% macro render_formset(formset) %}
+  {# Bring in the formset management #}
+  {{ formset.management_form }}
+
+  {# Show vertical tabs, one for each form in the formset #}
+  <b-tabs vertical pills class="mb-3" nav-wrapper-class="w-25" content-class="creator-formset-tab-content">
+    {% for formset_form in formset %}
+      <b-tab>
+        {# Display the index number, then the stringified model instance or that it's an extra form #}
+        <template #title>
+          <div>{{ loop.index }}. {% if not formset_form.empty_permitted or formset_form.initial %}{{ formset_form.instance }}{% else %}New {{ formset.model._meta.verbose_name|title }}{% endif %}</div>
+        </template>
+
+        {# Render the formset's form #}
+        <div class="p-3">
+          {{ render_formset_form(formset_form, new_form=formset_form.instance.pk == None) }}
+        </div>
+      </b-tab>
+    {% endfor %}
+  </b-tabs>
+{% endmacro %}
+
+
+{# Jinja2 macro to render an inline formset (a formset within a main formset) #}
+{% macro render_inline_formset(formset) %}
+  {# Bring in the formset management #}
+  {{ formset.management_form }}
+
+  <h3>{{ formset.form.verbose_name_plural }}</h3>
+  {% for formset_form in formset %}
+    {# Delete checkbox positioned at the top (only for existing forms) #}
+    {% if formset_form.DELETE and formset_form.instance and formset_form.instance.pk %}
+      <div class="mb-3 d-flex align-items-center">
+        <b-form-checkbox name="{{ formset_form.DELETE.html_name }}" id="{{ formset_form.DELETE.auto_id }}" class="text-danger">Select and click Update to delete this {{ formset.form.verbose_name if formset.form.verbose_name else formset_form._meta.model._meta.verbose_name|title }}</b-form-checkbox>
+      </div>
+    {% endif %}
+
+    {# Render the form, noting that it's within a formset #}
+    {{ render_form(formset_form, is_formset_form=True) }}
+
+    {# Visual separator #}
+    <hr />
+  {% endfor %}
+{% endmacro %}

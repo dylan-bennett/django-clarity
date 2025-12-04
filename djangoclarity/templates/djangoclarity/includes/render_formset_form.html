@@ -1,0 +1,19 @@
+{# Delete checkbox positioned at the top #}
+{% if formset_form.DELETE and not new_form %}
+  <div class="mb-3 d-flex align-items-center">
+    <div class="form-check">
+      <input class="form-check-input text-danger" type="checkbox" name="{{ formset_form.DELETE.html_name }}" id="{{ formset_form.DELETE.auto_id }}">
+      <label class="form-check-label" for="{{ formset_form.DELETE.auto_id }}">
+        Select and click Update to delete this {{ model_verbose_name|title }}
+      </label>
+    </div>
+  </div>
+{% endif %}
+
+{# Render the form #}
+{% include "djangoclarity/includes/render_form.html" with formset_form=formset_form, is_formset_form=True only %}
+
+{# Render an inline formset, if this formset_form has its own formset (attribute name: `inline_formset`) #}
+{% if formset_form.inline_formset %}
+  {% include "djangoclarity/includes/render_inline_formset.html" with formset=formset_form.inline_formset only %}
+{% endif %}
