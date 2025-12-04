@@ -202,6 +202,9 @@ class BaseCreatorCreateView(CreateView):
         # Index URL
         context["index_url"] = reverse(self.index_url_name)
 
+        # Add model verbose name for template use
+        context["model_verbose_name"] = self.model._meta.verbose_name
+
         return context
 
     def get_success_url(self):

@@ -1,3 +1,5 @@
+{% load django_bootstrap5 clarity_extras %}
+
 {# Bring in the formset management #}
 {{ formset.management_form }}
 
@@ -12,7 +14,7 @@
 
       {# Render the formset's form #}
       <div class="p-3">
-        {% include "djangoclarity/includes/render_formset_form.html" with formset_form=formset_form, new_form=formset_form.instance.pk == None only %}
+        {% render_formset_form formset_form formset_form.instance.pk == None %}
       </div>
     </b-tab>
   {% endfor %}

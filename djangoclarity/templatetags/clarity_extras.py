@@ -14,7 +14,7 @@ def get_item(d, key):
 
 
 # Inclusion tag for rendering a single form field
-@register.inclusion_tag("djangoclarity/includes/render_field.html", takes_context=False)
+@register.inclusion_tag("djangoclarity/includes/render_field.html")
 def render_field(field):
     # Handle the widget attributes with form-control default
     widget_attrs = field.field.widget.attrs.copy()
@@ -25,7 +25,7 @@ def render_field(field):
 
 
 # Inclusion tag for rendering a form
-@register.inclusion_tag("djangoclarity/includes/render_form.html", takes_context=False)
+@register.inclusion_tag("djangoclarity/includes/render_form.html")
 def render_form(form, is_formset_form=False):
     # Filter the visible fields (exclude the DELETE if it's a formset form)
     visible_fields = []
@@ -64,9 +64,7 @@ def render_form(form, is_formset_form=False):
 
 
 # Inclusion tag for rendering a formset form
-@register.inclusion_tag(
-    "djangoclarity/includes/render_formset_form.html", takes_context=False
-)
+@register.inclusion_tag("djangoclarity/includes/render_formset_form.html")
 def render_formset_form(formset_form, new_form=False):
     return {
         "formset_form": formset_form,
@@ -80,9 +78,7 @@ def render_formset_form(formset_form, new_form=False):
 
 
 # Inclusion tag for rendering a formset
-@register.inclusion_tag(
-    "djangoclarity/includes/render_formset.html", takes_context=False
-)
+@register.inclusion_tag("djangoclarity/includes/render_formset.html")
 def render_formset(formset):
     forms = []
     for idx, formset_form in enumerate(formset):
@@ -108,9 +104,7 @@ def render_formset(formset):
 
 
 # Inclusion tag for rendering an inline formset
-@register.inclusion_tag(
-    "djangoclarity/includes/render_inline_formset.html", takes_context=False
-)
+@register.inclusion_tag("djangoclarity/includes/render_inline_formset.html")
 def render_inline_formset(formset):
     forms = []
     for formset_form in formset:
