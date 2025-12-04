@@ -517,6 +517,44 @@ class BaseCreatorIndexView(ListView):
 
         return items
 
+    def update_object_list(self, paginator):
+        """Update the Paginator's object_list to include entries for the Update and Delete URLs"""
+        items = []
+
+        # # Get pagination data
+        # page, total_items = self._get_pagination_data()
+
+        # # Get the paginated queryset
+        # paginated_queryset = self._get_paginated_queryset(page, total_items)
+
+        for obj in paginator.object_list.all():
+            d = model_to_dict(obj, self._get_field_names())
+
+            # Add in any extra items
+            d.update(self._get_extra_items(obj))
+
+            # Add in final columns of the Update & Delete URLs
+            d[self.update_url_name] = reverse(
+                self.update_url_name, kwargs={"pk": obj.pk}
+            )
+            d[self.delete_url_name] = reverse(
+                self.delete_url_name, kwargs={"pk": obj.pk}
+            )
+
+            # Add the row of information to the list of items. Use the `get_{attr_name}_display()` method if it exists.
+            items.append(
+                {
+                    key: (
+                        getattr(obj, f"get_{key}_display")()
+                        if hasattr(obj, f"get_{key}_display")
+                        else value
+                    )
+                    for key, value in d.items()
+                }
+            )
+
+        return items
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -534,27 +572,16 @@ class BaseCreatorIndexView(ListView):
         # Add model verbose name for template use
         context["model_verbose_name"] = self.model._meta.verbose_name
 
-        # Get pagination data
-        page, total_items = self._get_pagination_data()
-
         # Get the items and field for the table
         context["items"] = self.get_rows()
         context["fields"] = self.get_headers()
 
-        # Set the JSONified context for the BootstrapVue app
-        # context["js_context"] = json.dumps(
-        #     {
-        #         "items": self.get_items(),
-        #         "fields": self.get_fields(),
-        #         "pagination": {
-        #             "total": total_items,
-        #             "per_page": self.items_per_page,
-        #             "current_page": page,
-        #         },
-        #     }
-        # )
+        # TODO: I'm definitely duplicating efforts with the pagination thing. Look into the Django Paginator class and see if there's a way to override its object_list or page_obj or whatever, so that we can add in the Delete and Update URLs as extra attributes. That way we won't have to write our own pagination methods.
 
         # pprint.pp(context, indent=2)
+        # context["paginator"].object_list = self.update_object_list(context["paginator"])
+
+        # pprint.pp(context["paginator"].object_list)
 
         return context
 
