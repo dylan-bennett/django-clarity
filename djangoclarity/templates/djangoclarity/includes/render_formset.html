@@ -4,18 +4,25 @@
 {{ formset.management_form }}
 
 {# Show vertical tabs, one for each form in the formset #}
-<b-tabs vertical pills class="mb-3" nav-wrapper-class="w-25" content-class="creator-formset-tab-content">
-  {% for formset_form in forms %}
-    <b-tab>
-      {# Display the index number, then the stringified model instance or that it's an extra form #}
-      <template #title>
-        <div>{{ forloop.counter }}. {% if not formset_form.empty_permitted or formset_form.initial %}{{ formset_form.instance }}{% else %}New {{ model_verbose_name|title }}{% endif %}</div>
-      </template>
-
-      {# Render the formset's form #}
-      <div class="p-3">
-        {% render_formset_form formset_form formset_form.instance.pk == None %}
-      </div>
-    </b-tab>
-  {% endfor %}
-</b-tabs>
+<div class="row">
+  <div class="col-3">
+    <div class="nav flex-column nav-pills mb-3" id="formset-tab" role="tablist" aria-orientation="vertical">
+      {% for formset_form in formset_forms %}
+        <button class="nav-link {% if forloop.first %}active{% endif %}" id="formset-tab-{{ forloop.counter }}" data-bs-toggle="pill" data-bs-target="#formset-pane-{{ forloop.counter }}" type="button" role="tab" aria-controls="formset-pane-{{ forloop.counter }}" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+          {{ forloop.counter }}. {% if not formset_form.form.empty_permitted or formset_form.form.initial %}{{ formset_form.form.instance }}{% else %}New {{ model_verbose_name|title }}{% endif %}
+        </button>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="col-9">
+    <div class="tab-content creator-formset-tab-content" id="formset-tabContent">
+      {% for formset_form in formset_forms %}
+        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="formset-pane-{{ forloop.counter }}" role="tabpanel" aria-labelledby="formset-tab-{{ forloop.counter }}">
+          <div class="p-3">
+            {% render_formset_form formset_form.form formset_form.is_new %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>

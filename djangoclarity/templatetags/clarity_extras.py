@@ -80,12 +80,11 @@ def render_formset_form(formset_form, new_form=False):
 # Inclusion tag for rendering a formset
 @register.inclusion_tag("djangoclarity/includes/render_formset.html")
 def render_formset(formset):
-    forms = []
+    formset_forms = []
     for idx, formset_form in enumerate(formset):
-        forms.append(
+        formset_forms.append(
             {
                 "form": formset_form,
-                "index": idx + 1,
                 "is_new": (
                     formset_form.instance.pk is None
                     if hasattr(formset_form, "instance")
@@ -96,7 +95,7 @@ def render_formset(formset):
 
     return {
         "formset": formset,
-        "forms": forms,
+        "formset_forms": formset_forms,
         "model_verbose_name": (
             formset.model._meta.verbose_name if hasattr(formset, "model") else ""
         ),
@@ -106,9 +105,9 @@ def render_formset(formset):
 # Inclusion tag for rendering an inline formset
 @register.inclusion_tag("djangoclarity/includes/render_inline_formset.html")
 def render_inline_formset(formset):
-    forms = []
+    formset_forms = []
     for formset_form in formset:
-        forms.append(
+        formset_forms.append(
             {
                 "form": formset_form,
                 "has_delete": hasattr(formset_form, "DELETE")
@@ -133,7 +132,7 @@ def render_inline_formset(formset):
 
     return {
         "formset": formset,
-        "forms": forms,
+        "formset_forms": formset_forms,
         "verbose_name_plural": verbose_name_plural,
         "verbose_name": verbose_name,
         "model_verbose_name": (

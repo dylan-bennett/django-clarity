@@ -258,6 +258,9 @@ class BaseCreatorUpdateView(UpdateView):
             self.delete_url_name, kwargs={"pk": self.object.pk}
         )
 
+        # Add model verbose name for template use
+        context["model_verbose_name"] = self.model._meta.verbose_name
+
         return context
 
     def form_valid(self, form):

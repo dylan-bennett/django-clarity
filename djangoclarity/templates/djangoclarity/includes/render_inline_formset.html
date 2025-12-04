@@ -4,12 +4,12 @@
 {{ formset.management_form }}
 
 <h3>{{ verbose_name_plural }}</h3>
-{% for formset_form in forms %}
+{% for formset_form in formset_forms %}
   {# Delete checkbox positioned at the top (only for existing forms) #}
-  {% if formset_form.DELETE and formset_form.instance and formset_form.instance.pk %}
+  {% if formset_form.has_delete and formset_form.has_instance_pk %}
     <div class="mb-3 d-flex align-items-center">
-      <input class="form-check-input text-danger" type="checkbox" name="{{ formset_form.DELETE.html_name }}" id="{{ formset_form.DELETE.auto_id }}">
-      <label class="form-check-label" for="{{ formset_form.DELETE.auto_id }}">
+      <input class="form-check-input text-danger" type="checkbox" name="{{ formset_form.form.DELETE.html_name }}" id="{{ formset_form.form.DELETE.auto_id }}">
+      <label class="form-check-label" for="{{ formset_form.form.DELETE.auto_id }}">
         Select and click Update to delete this {{ verbose_name if verbose_name else model_verbose_name|title }}
       </label>
     </div>

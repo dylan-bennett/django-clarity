@@ -1,11 +1,8 @@
-{% extends "base_vue.html" %}
-
-<!-- Import Jinja2 macros for rendering the forms -->
-{% from "creators/includes/form_macros.jinja2" import render_form %}
-{% from "creators/includes/form_macros.jinja2" import render_formset %}
+{% extends base_template|default:"djangoclarity/base.html" %}
+{% load django_bootstrap5 clarity_extras %}
 
 {% block extrahead %}
-{{ super() }}
+{{ block.super }}
 
 <!-- Required for styling/js to make ckeditor5 work -->
 {{ form.media }}
@@ -21,80 +18,67 @@
 
 {% endblock %}
 
-{% block body_class %}{% endblock body_class %}
-
 {% block title %}
-{{ super() }} | Update {{ form._meta.model._meta.verbose_name|title }} Instance
+{{ block.super }} | Update {{ model_verbose_name|title }} Instance
 {% endblock %}
 
 {% block content %}
-<div id="app" v-cloak>
-  <b-container class="py-3">
-    <b-form method="post" enctype="multipart/form-data">
+<div class="container py-3">
+      <form method="post" enctype="multipart/form-data" class="d-flex flex-column">
       {% csrf_token %}
 
       <!-- Page header -->
       <div class="d-flex align-items-center justify-content-between w-100 mb-3">
-        <h1>{{ form._meta.model._meta.verbose_name|title }} Creator</h1>
+        <h1>{{ model_verbose_name|title }} Creator</h1>
 
         <!-- Navigation -->
         <div class="d-flex align-items-center">
           {% block index_links %}
-          <a href="{{ index_url }}" class="mr-2">Back To Index</a>
+          <a href="{{ index_url }}" class="me-2">Back To Index</a>
           {% endblock index_links %}
-          <b-button variant="success" type="submit" class="mr-2">Update</b-button>
-          <b-button variant="danger" href="{{ delete_url }}">Delete</b-button>
+          {% bootstrap_button "Update" button_type="submit" button_class="btn-success me-2" %}
+          {% bootstrap_button "Delete" href=delete_url button_class="btn-danger" %}
         </div>
       </div>
 
       <!-- All form & formset errors displayed at the top -->
       {% if all_errors %}
-      <b-alert show variant="danger" class="mb-4">
+      <div class="alert alert-danger mb-4" role="alert">
         <h4 class="alert-heading">Please fix the following errors:</h4>
         <ul class="mb-0">
           {% for error in all_errors %}
           <li>{{ error }}</li>
           {% endfor %}
         </ul>
-      </b-alert>
+      </div>
       {% endif %}
 
       <!-- Form header -->
-      <h2>{{ form._meta.model._meta.verbose_name|title }}</h2>
+      <h2>{{ model_verbose_name|title }}</h2>
 
       <!-- Render the form -->
-      {{ render_form(form) }}
+      {% render_form form %}
 
       <!-- Go through all of the formsets -->
       {% block render_formsets_block %}
-      {% for formset in formsets %}
-        <!-- Formset header -->
-        <h2>{{ formset.model._meta.verbose_name|title }}</h2>
+        {% for formset in formsets %}
+          <!-- Formset header -->
+          <!-- TODO: get the formset's model_verbose_name -->
+          <h2>Formset's model verbose name</h2>
 
-        <!-- Render the formset -->
-        {{ render_formset(formset) }}
-      {% endfor %}
+          <!-- Render the formset -->
+          {% render_formset formset %}
+        {% endfor %}
       {% endblock render_formsets_block %}
 
       <!-- Navigation at the bottom -->
       <div class="d-flex justify-content-end w-100">
         <div class="d-flex align-items-center">
-          <a href="{{ index_url }}" class="mr-2">Back To Index</a>
-          <b-button variant="success" type="submit" class="mr-2">Update</b-button>
-          <b-button variant="danger" href="{{ delete_url }}">Delete</b-button>
+          <a href="{{ index_url }}" class="me-2">Back To Index</a>
+          {% bootstrap_button "Update" button_type="submit" button_class="btn-success me-2" %}
+          {% bootstrap_button "Delete" href=delete_url button_class="btn-danger" %}
         </div>
       </div>
-    </b-form>
-  </b-container>
+    </form>
 </div>
 {% endblock content %}
-
-{% block scripts %}
-<script>
-const app = new Vue({
-  el: "#app",
-  delimiters: ["[[", "]]"],
-  data() {},
-});
-</script>
-{% endblock scripts %}

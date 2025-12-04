@@ -7,16 +7,16 @@
 
 {% block content %}
 <div class="container py-3">
-  <!-- Page header -->
-  <div class="d-flex align-items-center justify-content-between w-100 mb-3">
-    <h1>{{ model_verbose_name|title }} Creator Delete</h1>
-    <div class="d-flex align-items-center">
-      <a href="{{ index_url }}" class="me-2">Back To Index</a>
-    </div>
-  </div>
-
   <form method="post" class="d-flex flex-column">
     {% csrf_token %}
+
+    <!-- Page header -->
+    <div class="d-flex align-items-center justify-content-between w-100 mb-3">
+      <h1>{{ model_verbose_name|title }} Creator Delete</h1>
+      <div class="d-flex align-items-center">
+        <a href="{{ index_url }}" class="me-2">Back To Index</a>
+      </div>
+    </div>
 
     <!-- Confirmation text -->
     <p>Are you sure you want to delete "{{ object }}"?</p>
