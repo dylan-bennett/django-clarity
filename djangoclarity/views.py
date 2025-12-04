@@ -1,4 +1,5 @@
 import json
+import pprint
 
 from django.core.exceptions import FieldDoesNotExist
 from django.db import transaction
@@ -324,13 +325,14 @@ class BaseCreatorIndexView(ListView):
     base_template = "djangoclarity/base.html"
     items_per_page = 10
     order_by_fields = ("id",)
+    paginate_by = 10
 
     def get_queryset(self):
         """
         Filter the queryset based on the search parameter if provided.
         """
         queryset = super().get_queryset().order_by(*self.order_by_fields)
-        search_term = self.request.GET.get("search", "")
+        search_term = self.request.GET.get("q", "")
 
         if search_term:
             # Get the field names to search in
@@ -464,6 +466,57 @@ class BaseCreatorIndexView(ListView):
 
         return fields
 
+    def get_headers(self):
+        """Return the list of field headers for the index table."""
+        headers = self._get_field_names()
+
+        # Add in any extra headers
+        headers += self._get_extra_fields()
+
+        # Add in final headers for the Update & Delete URLs
+        headers.append(self.update_url_name)
+        headers.append(self.delete_url_name)
+
+        return headers
+
+    def get_rows(self):
+        """Return a list of dicts, one per object in the query"""
+        items = []
+
+        # Get pagination data
+        page, total_items = self._get_pagination_data()
+
+        # Get the paginated queryset
+        paginated_queryset = self._get_paginated_queryset(page, total_items)
+
+        for obj in paginated_queryset:
+            d = model_to_dict(obj, self._get_field_names())
+
+            # Add in any extra items
+            d.update(self._get_extra_items(obj))
+
+            # Add in final columns of the Update & Delete URLs
+            d[self.update_url_name] = reverse(
+                self.update_url_name, kwargs={"pk": obj.pk}
+            )
+            d[self.delete_url_name] = reverse(
+                self.delete_url_name, kwargs={"pk": obj.pk}
+            )
+
+            # Add the row of information to the list of items. Use the `get_{attr_name}_display()` method if it exists.
+            items.append(
+                {
+                    key: (
+                        getattr(obj, f"get_{key}_display")()
+                        if hasattr(obj, f"get_{key}_display")
+                        else value
+                    )
+                    for key, value in d.items()
+                }
+            )
+
+        return items
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -484,18 +537,24 @@ class BaseCreatorIndexView(ListView):
         # Get pagination data
         page, total_items = self._get_pagination_data()
 
+        # Get the items and field for the table
+        context["items"] = self.get_rows()
+        context["fields"] = self.get_headers()
+
         # Set the JSONified context for the BootstrapVue app
-        context["js_context"] = json.dumps(
-            {
-                "items": self.get_items(),
-                "fields": self.get_fields(),
-                "pagination": {
-                    "total": total_items,
-                    "per_page": self.items_per_page,
-                    "current_page": page,
-                },
-            }
-        )
+        # context["js_context"] = json.dumps(
+        #     {
+        #         "items": self.get_items(),
+        #         "fields": self.get_fields(),
+        #         "pagination": {
+        #             "total": total_items,
+        #             "per_page": self.items_per_page,
+        #             "current_page": page,
+        #         },
+        #     }
+        # )
+
+        # pprint.pp(context, indent=2)
 
         return context
 
