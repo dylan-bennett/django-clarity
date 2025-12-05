@@ -3,6 +3,9 @@
 {# Bring in the formset management #}
 {{ formset.management_form }}
 
+{# Formset header #}
+<h2>{{ model_verbose_name|title }}</h2>
+
 {# Show vertical tabs, one for each form in the formset #}
 <div class="row">
   <div class="col-3">

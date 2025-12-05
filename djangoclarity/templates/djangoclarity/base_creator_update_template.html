@@ -10,9 +10,7 @@
 <!-- Go through all of the formsets -->
 {% for formset in formsets %}
   {% for formset_form in formset %}
-
     {{ formset_form.media }}
-
   {% endfor %}
 {% endfor %}
 
@@ -59,14 +57,9 @@
       <!-- Render the form -->
       {% render_form form %}
 
-      <!-- Go through all of the formsets -->
+      <!-- Go through all of the formsets and render them -->
       {% block render_formsets_block %}
         {% for formset in formsets %}
-          <!-- Formset header -->
-          <!-- TODO: get the formset's model_verbose_name -->
-          <h2>Formset's model verbose name</h2>
-
-          <!-- Render the formset -->
           {% render_formset formset %}
         {% endfor %}
       {% endblock render_formsets_block %}

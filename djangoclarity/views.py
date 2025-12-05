@@ -496,7 +496,22 @@ class BaseCreatorIndexView(ListView):
         paginated_queryset = self._get_paginated_queryset(page, total_items)
 
         for obj in paginated_queryset:
-            d = model_to_dict(obj, self._get_field_names())
+            # d = model_to_dict(obj, self._get_field_names())
+
+            # Build dict manually from requested field names
+            d = {}
+            for field_name in self._get_field_names():
+                try:
+                    field = self.model._meta.get_field(field_name)
+                    value = getattr(obj, field_name)
+                    # Handle ForeignKey fields - convert to the string
+                    if field.is_relation and not field.many_to_many:
+                        d[field_name] = str(value) if value else None
+                    else:
+                        d[field_name] = value
+                except (AttributeError, FieldDoesNotExist):
+                    # Skip if field doesn't exist (might be a form-only field)
+                    continue
 
             # Add in any extra items
             d.update(self._get_extra_items(obj))
@@ -584,7 +599,7 @@ class BaseCreatorIndexView(ListView):
 
         # TODO: I'm definitely duplicating efforts with the pagination thing. Look into the Django Paginator class and see if there's a way to override its object_list or page_obj or whatever, so that we can add in the Delete and Update URLs as extra attributes. That way we won't have to write our own pagination methods.
 
-        # pprint.pp(context, indent=2)
+        pprint.pp(context, indent=2)
         # context["paginator"].object_list = self.update_object_list(context["paginator"])
 
         # pprint.pp(context["paginator"].object_list)
