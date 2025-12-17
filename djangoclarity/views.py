@@ -9,130 +9,8 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
-# from mainsite.widgets import ThumbnailImageWidget
 
-
-def _add_error(form, field_name, error_text):
-    """
-    Safely adds an error to a form field or form-wide errors.
-
-    Django's form.add_error() removes the field from form.cleaned_data when adding
-    an error, but raises AttributeError if cleaned_data doesn't exist yet. This method
-    handles that case gracefully.
-
-    Args:
-        form: The Django form instance to add the error to
-        field_name: Name of the field to attach error to, or None for non-field errors
-        error_text: The error message to add
-    """
-    try:
-        form.add_error(field_name, error_text)
-    except AttributeError:
-        pass
-
-
-def get_form_errors(form):
-    """
-    Compiles all errors from a form into a list of formatted error messages.
-
-    Collects both non-field errors and field-specific errors from the form.
-    Field-specific errors are prefixed with the field label for context.
-
-    Args:
-        form: The Django form instance to get errors from
-
-    Returns:
-        list: A list of error message strings. Empty list if no errors or no form.
-        Each error is formatted as either:
-            - The error message directly (for non-field errors)
-            - "{field_label}: {error}" (for field-specific errors)
-    """
-    all_errors = []
-
-    # Quick way of testing out what errors messages will look like on the frontend
-    # _add_error(form, None, "main form non-field error")
-    # _add_error(form, "slug", "The slug is missing, ya dink")
-
-    # No errors to return if there's no form nor errors
-    if not (form and form.errors):
-        return all_errors
-
-    # Add non-field errors
-    all_errors.extend(form.non_field_errors())
-
-    # Add field-specific errors
-    for field, errors in form.errors.items():
-        if field != "__all__":  # Skip non-field errors as we already added them
-            field_label = form.fields[field].label or field
-            all_errors.extend(f"{field_label}: {error}" for error in errors)
-
-    return all_errors
-
-
-def get_formset_errors(formset):
-    """
-    Compiles all errors from a formset into a list of formatted error messages.
-
-    Collects formset-level errors and form-specific errors from each form in the formset.
-    For form-specific errors, includes the form title/number and field label for context.
-
-    Args:
-        formset: The Django formset instance to get errors from
-
-    Returns:
-        list: A list of error message strings. Empty list if no errors or no formset.
-        Each error is formatted as one of:
-            - The error message directly (for formset-level errors)
-            - "{form_title}: {error}" (for form-level errors)
-            - "{form_title} - {field_label}: {error}" (for field-specific errors)
-    """
-    all_errors = []
-
-    # Quick way of testing out what errors messages will look like on the frontend
-    # if formset.forms:
-    #     _add_error(formset.forms[0], None, "formset non-field error")
-    #     _add_error(formset.forms[0], "title", "No title, tsk tsk tsk")
-    # formset._non_form_errors = ["formset non-form error message"]
-
-    # No errors to return if there's no formset
-    if not formset:
-        return all_errors
-
-    # Add non-form errors (formset-level errors)
-    all_errors.extend(formset.non_form_errors())
-
-    for i, form in enumerate(formset.forms):
-        form_errors = form.errors
-
-        if not form_errors:
-            continue
-
-        # Get the string of the formset's model instance if it exists,
-        # otherwise use the index with the name of the formset's model
-        form_title = (
-            str(form.instance)
-            if form.instance and form.instance.pk
-            else f"{formset.model.__name__} {i + 1}"
-        )
-
-        # Add non-field errors for this form
-        if "__all__" in form_errors:
-            all_errors.extend(
-                f"{form_title}: {error}" for error in form_errors["__all__"]
-            )
-
-        # Add field-specific errors for this form
-        for field, errors in form_errors.items():
-            if field != "__all__":
-                field_label = form.fields[field].label or field
-                all_errors.extend(
-                    f"{form_title} - {field_label}: {error}" for error in errors
-                )
-
-    return all_errors
-
-
-class BaseDjangoClarityView:
+class DjangoClarityBaseView:
     base_template = "djangoclarity/base.html"
 
     # Attributes to be sent into the .as_view() method
@@ -174,8 +52,97 @@ class BaseDjangoClarityView:
 
         super().__init__(*args, **kwargs)
 
+    def get_form_errors(self, form):
+        """
+        Compiles all errors from a form into a list of formatted error messages.
 
-class BaseDjangoClarityCreateView(CreateView):
+        Collects both non-field errors and field-specific errors from the form.
+        Field-specific errors are prefixed with the field label for context.
+
+        Args:
+            form: The Django form instance to get errors from
+
+        Returns:
+            list: A list of error message strings. Empty list if no errors or no form.
+            Each error is formatted as either:
+                - The error message directly (for non-field errors)
+                - "{field_label}: {error}" (for field-specific errors)
+        """
+        all_errors = []
+
+        # No errors to return if there's no form nor errors
+        if not (form and form.errors):
+            return all_errors
+
+        # Add non-field errors
+        all_errors.extend(form.non_field_errors())
+
+        # Add field-specific errors
+        for field, errors in form.errors.items():
+            if field != "__all__":  # Skip non-field errors as we already added them
+                field_label = form.fields[field].label or field
+                all_errors.extend(f"{field_label}: {error}" for error in errors)
+
+        return all_errors
+
+    def get_formset_errors(self, formset):
+        """
+        Compiles all errors from a formset into a list of formatted error messages.
+
+        Collects formset-level errors and form-specific errors from each form in the formset.
+        For form-specific errors, includes the form title/number and field label for context.
+
+        Args:
+            formset: The Django formset instance to get errors from
+
+        Returns:
+            list: A list of error message strings. Empty list if no errors or no formset.
+            Each error is formatted as one of:
+                - The error message directly (for formset-level errors)
+                - "{form_title}: {error}" (for form-level errors)
+                - "{form_title} - {field_label}: {error}" (for field-specific errors)
+        """
+        all_errors = []
+
+        # No errors to return if there's no formset
+        if not formset:
+            return all_errors
+
+        # Add non-form errors (formset-level errors)
+        all_errors.extend(formset.non_form_errors())
+
+        for i, form in enumerate(formset.forms):
+            form_errors = form.errors
+
+            if not form_errors:
+                continue
+
+            # Get the string of the formset's model instance if it exists,
+            # otherwise use the index with the name of the formset's model
+            form_title = (
+                str(form.instance)
+                if form.instance and form.instance.pk
+                else f"{formset.model.__name__} {i + 1}"
+            )
+
+            # Add non-field errors for this form
+            if "__all__" in form_errors:
+                all_errors.extend(
+                    f"{form_title}: {error}" for error in form_errors["__all__"]
+                )
+
+            # Add field-specific errors for this form
+            for field, errors in form_errors.items():
+                if field != "__all__":
+                    field_label = form.fields[field].label or field
+                    all_errors.extend(
+                        f"{form_title} - {field_label}: {error}" for error in errors
+                    )
+
+        return all_errors
+
+
+class DjangoClarityCreateView(DjangoClarityBaseView, CreateView):
     """
     Base view for creating a parent model instance (form).
     """
@@ -192,7 +159,7 @@ class BaseDjangoClarityCreateView(CreateView):
 
         # Collect all errors to display at the top
         all_errors = []
-        all_errors.extend(get_form_errors(context.get("form")))
+        all_errors.extend(self.get_form_errors(context.get("form")))
         context["all_errors"] = all_errors
 
         # Formset model names to let the user know about any child model relationships coming up
@@ -215,7 +182,7 @@ class BaseDjangoClarityCreateView(CreateView):
         return reverse(self.update_url_name, kwargs={"pk": self.object.pk})
 
 
-class BaseDjangoClarityUpdateView(UpdateView):
+class DjangoClarityUpdateView(DjangoClarityBaseView, UpdateView):
     """
     Base view for updating a parent model instance (form)
     and children model instances (formsets).
@@ -245,9 +212,9 @@ class BaseDjangoClarityUpdateView(UpdateView):
 
         # Collect all errors to display at the top
         all_errors = []
-        all_errors.extend(get_form_errors(context.get("form")))
+        all_errors.extend(self.get_form_errors(context.get("form")))
         for formset in context["formsets"]:
-            all_errors.extend(get_formset_errors(formset))
+            all_errors.extend(self.get_formset_errors(formset))
         context["all_errors"] = all_errors
 
         # Index URL
@@ -297,7 +264,7 @@ class BaseDjangoClarityUpdateView(UpdateView):
         return reverse(self.update_url_name, kwargs={"pk": self.object.pk})
 
 
-class BaseDjangoClarityListView(ListView):
+class DjangoClarityListView(DjangoClarityBaseView, ListView):
     template_name = "djangoclarity/base_index_template.html"
     items_per_page = 10
     order_by_fields = ("id",)
@@ -571,7 +538,7 @@ class BaseDjangoClarityListView(ListView):
         return context
 
 
-class BaseDjangoClarityDeleteView(DeleteView):
+class DjangoClarityDeleteView(DjangoClarityBaseView, DeleteView):
     template_name = "djangoclarity/base_delete_template.html"
 
     def get_context_data(self, **kwargs):
@@ -593,19 +560,3 @@ class BaseDjangoClarityDeleteView(DeleteView):
         self.object.delete()
 
         return HttpResponseRedirect(self.get_success_url())
-
-
-class DjangoClarityCreateView(BaseDjangoClarityView, BaseDjangoClarityCreateView):
-    pass
-
-
-class DjangoClarityDeleteView(BaseDjangoClarityView, BaseDjangoClarityDeleteView):
-    pass
-
-
-class DjangoClarityListView(BaseDjangoClarityView, BaseDjangoClarityListView):
-    pass
-
-
-class DjangoClarityUpdateView(BaseDjangoClarityView, BaseDjangoClarityUpdateView):
-    pass
