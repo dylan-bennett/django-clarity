@@ -1,11 +1,11 @@
-{% load django_bootstrap5 clarity_extras %}
+{% load django_bootstrap5 djangoclarity_extras %}
 
 <div class="row">
   {# Show only the visible fields. Use `hidden_fields()` to see the hidden ones #}
   {% for field in visible_fields %}
     <div class="col-12 col-md-{{ field.col_md_width }} mb-2">
       {# Render each field as half the row, unless it's on its own row, in which case it's the whole row #}
-      {% render_field field.field %}
+      {% djangoclarity_render_field field.field %}
     </div>
   {% endfor %}
 </div>

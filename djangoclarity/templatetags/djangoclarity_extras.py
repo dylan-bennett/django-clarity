@@ -6,16 +6,12 @@ register = template.Library()
 # Filter for accessing an entry in a dictionary
 @register.filter
 def get_item(d, key):
-    try:
-        return d.get(key)
-        # return getattr(d, key)
-    except AttributeError:
-        return None
+    return d.get(key)
 
 
 # Inclusion tag for rendering a single form field
 @register.inclusion_tag("djangoclarity/includes/render_field.html")
-def render_field(field):
+def djangoclarity_render_field(field):
     # Handle the widget attributes with form-control default
     widget_attrs = field.field.widget.attrs.copy()
     if "class" not in widget_attrs:
@@ -26,7 +22,7 @@ def render_field(field):
 
 # Inclusion tag for rendering a form
 @register.inclusion_tag("djangoclarity/includes/render_form.html")
-def render_form(form, is_formset_form=False):
+def djangoclarity_render_form(form, is_formset_form=False):
     # Filter the visible fields (exclude the DELETE if it's a formset form)
     visible_fields = []
     for field in form.visible_fields():
@@ -65,7 +61,7 @@ def render_form(form, is_formset_form=False):
 
 # Inclusion tag for rendering a formset form
 @register.inclusion_tag("djangoclarity/includes/render_formset_form.html")
-def render_formset_form(formset_form, new_form=False):
+def djangoclarity_render_formset_form(formset_form, new_form=False):
     return {
         "formset_form": formset_form,
         "new_form": new_form,
@@ -79,7 +75,7 @@ def render_formset_form(formset_form, new_form=False):
 
 # Inclusion tag for rendering a formset
 @register.inclusion_tag("djangoclarity/includes/render_formset.html")
-def render_formset(formset):
+def djangoclarity_render_formset(formset):
     formset_forms = []
     for idx, formset_form in enumerate(formset):
         formset_forms.append(
@@ -104,7 +100,7 @@ def render_formset(formset):
 
 # Inclusion tag for rendering an inline formset
 @register.inclusion_tag("djangoclarity/includes/render_inline_formset.html")
-def render_inline_formset(formset):
+def djangoclarity_render_inline_formset(formset):
     formset_forms = []
     for formset_form in formset:
         formset_forms.append(

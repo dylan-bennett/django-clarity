@@ -1,4 +1,4 @@
-{% load django_bootstrap5 clarity_extras %}
+{% load django_bootstrap5 djangoclarity_extras %}
 
 {# Delete checkbox positioned at the top #}
 {% if formset_form.DELETE and not new_form %}
@@ -13,9 +13,9 @@
 {% endif %}
 
 {# Render the form #}
-{% render_form formset_form True %}
+{% djangoclarity_render_form formset_form True %}
 
 {# Render an inline formset, if this formset_form has its own formset (attribute name: `inline_formset`) #}
 {% if formset_form.inline_formset %}
-  {% render_inline_formset formset_form.inline_formset %}
+  {% djangoclarity_render_inline_formset formset_form.inline_formset %}
 {% endif %}

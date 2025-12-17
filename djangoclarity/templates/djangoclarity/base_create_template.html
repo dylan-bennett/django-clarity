@@ -1,5 +1,5 @@
 {% extends base_template|default:"djangoclarity/base.html" %}
-{% load django_bootstrap5 clarity_extras %}
+{% load django_bootstrap5 djangoclarity_extras %}
 
 {% block title %}
 {{ block.super }} | Create {{ model_verbose_name|title }}
@@ -35,7 +35,7 @@
     <h2>{{ model_verbose_name|title }}</h2>
 
     <!-- Render the form -->
-    {% render_form form %}
+    {% djangoclarity_render_form form %}
 
     <!-- If we're creating then let the user know of any upcoming child models in the update page -->
     {% if formset_model_names|length > 0 %}

@@ -1,5 +1,5 @@
 {% extends base_template|default:"djangoclarity/base.html" %}
-{% load django_bootstrap5 clarity_extras %}
+{% load django_bootstrap5 djangoclarity_extras %}
 
 {% block title %}
 {{ block.super }} | Update {{ model_verbose_name|title }}
@@ -40,12 +40,12 @@
       <h2>{{ model_verbose_name|title }}</h2>
 
       <!-- Render the form -->
-      {% render_form form %}
+      {% djangoclarity_render_form form %}
 
       <!-- Go through all of the formsets and render them -->
       {% block render_formsets_block %}
         {% for formset in formsets %}
-          {% render_formset formset %}
+          {% djangoclarity_render_formset formset %}
         {% endfor %}
       {% endblock render_formsets_block %}
 

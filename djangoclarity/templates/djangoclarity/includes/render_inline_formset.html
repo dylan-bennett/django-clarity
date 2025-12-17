@@ -1,4 +1,4 @@
-{% load django_bootstrap5 clarity_extras %}
+{% load django_bootstrap5 djangoclarity_extras %}
 
 {# Bring in the formset management #}
 {{ formset.management_form }}
@@ -16,7 +16,7 @@
   {% endif %}
 
   {# Render the form, noting that it's within a formset #}
-  {% render_form formset_form True %}
+  {% djangoclarity_render_form formset_form True %}
 
   {# Visual separator #}
   <hr />
