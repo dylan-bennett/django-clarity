@@ -1,21 +1,6 @@
 {% extends base_template|default:"djangoclarity/base.html" %}
 {% load django_bootstrap5 clarity_extras %}
 
-{% block extrahead %}
-{{ block.super }}
-
-<!-- Required for styling/js to make ckeditor5 work -->
-{{ form.media }}
-
-<!-- Go through all of the formsets -->
-{% for formset in formsets %}
-  {% for formset_form in formset %}
-    {{ formset_form.media }}
-  {% endfor %}
-{% endfor %}
-
-{% endblock %}
-
 {% block title %}
 {{ block.super }} | Update {{ model_verbose_name|title }}
 {% endblock %}

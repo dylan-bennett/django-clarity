@@ -8,7 +8,6 @@ from django.forms import model_to_dict
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
-from django_ckeditor_5.widgets import CKEditor5Widget
 
 # from mainsite.widgets import ThumbnailImageWidget
 
@@ -297,35 +296,6 @@ class BaseDjangoClarityUpdateView(UpdateView):
         """
         return reverse(self.update_url_name, kwargs={"pk": self.object.pk})
 
-    def post(self, request, **kwargs):
-        # April 21, 2025 -- dani@hatchcoding.com, dylan@hatchcoding.com
-
-        # A Creator can contain a list of formsets, and each formset is a list of forms. A formset can also contain
-        # "extra" forms (e.g., `extra=3`), in case you want to create new database records using the formset.
-
-        # CKEditor has a bug where an empty, optional editor will actually contain a paragraph with a non-breaking space
-        # (https://github.com/ckeditor/ckeditor5/issues/401).
-
-        # The problem is that if a formset's empty form detects any content in any of the fields, it thinks that we want
-        # that form to create a new record. And since an empty CKEditor's content is not actually an empty string, but
-        # instead is a paragraph element with a non-breaking space, that means that none of our "empty" forms are
-        # actually considered empty.
-
-        # This fix is very hacky, but it works. We're basically grabbing the POST information immediately after the
-        # form's Submit button is pressed and we're manipulating the data before Django's form validation is able to
-        # check it.
-
-        # Ideally we'd find a better way of doing this, but for now (and for this specific use case) this solution will
-        # have to stay.
-
-        request.POST = request.POST.copy()
-
-        for key, value in request.POST.items():
-            if value == "<p>&nbsp;</p>":
-                request.POST[key] = ""
-
-        return super().post(request, **kwargs)
-
 
 class BaseDjangoClarityListView(ListView):
     template_name = "djangoclarity/base_index_template.html"
@@ -395,17 +365,11 @@ class BaseDjangoClarityListView(ListView):
     def _get_field_names(self):
         """
         Return the list of field names (column headers) for our index page.
-        These will be gotten from the form's fields, and will exclude
-        anything that wouldn't fit well on a table (e.g., images, TextField, etc.)
+        These will be gotten from the form's fields.
         This also does not include the Update/Delete links.
         """
         field_names = []
         for field_name, field in self.form_class().fields.items():
-            # if isinstance(field.widget, CKEditor5Widget) or isinstance(
-            #     field.widget, ThumbnailImageWidget
-            # ):
-            if isinstance(field.widget, CKEditor5Widget):
-                continue
             field_names.append(field_name)
 
         return field_names

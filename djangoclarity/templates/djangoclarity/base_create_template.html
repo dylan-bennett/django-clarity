@@ -1,13 +1,6 @@
 {% extends base_template|default:"djangoclarity/base.html" %}
 {% load django_bootstrap5 clarity_extras %}
 
-{% block extrahead %}
-{{ block.super }}
-
-<!-- Required for styling/js to make ckeditor5 work -->
-{{ form.media }}
-{% endblock %}
-
 {% block title %}
 {{ block.super }} | Create {{ model_verbose_name|title }}
 {% endblock title %}
