@@ -18,7 +18,7 @@
     </div>
   </div>
   <div class="col-9">
-    <div class="tab-content creator-formset-tab-content" id="formset-tabContent">
+    <div class="tab-content" id="formset-tabContent">
       {% for formset_form in formset_forms %}
         <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="formset-pane-{{ forloop.counter }}" role="tabpanel" aria-labelledby="formset-tab-{{ forloop.counter }}">
           <div class="p-3">

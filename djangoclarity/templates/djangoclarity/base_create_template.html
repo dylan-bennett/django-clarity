@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block title %}
-{{ block.super }} | Create {{ model_verbose_name|title }} Instance
+{{ block.super }} | Create {{ model_verbose_name|title }}
 {% endblock title %}
 
 {% block content %}
@@ -19,7 +19,7 @@
 
     <!-- Page header -->
     <div class="d-flex align-items-center justify-content-between w-100 mb-3">
-      <h1>{{ model_verbose_name|title }} Creator</h1>
+      <h1>Create {{ model_verbose_name|title }}</h1>
       <div class="d-flex align-items-center">
         <a href="{{ index_url }}" class="me-2">Back To Index</a>
         {% bootstrap_button "Create" button_type="submit" button_class="btn-success" %}

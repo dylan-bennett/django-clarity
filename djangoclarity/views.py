@@ -133,7 +133,9 @@ def get_formset_errors(formset):
     return all_errors
 
 
-class BaseCreatorView:
+class BaseDjangoClarityView:
+    base_template = "djangoclarity/base.html"
+
     # Attributes to be sent into the .as_view() method
     slug = None
     form_class = None
@@ -164,22 +166,22 @@ class BaseCreatorView:
 
         # Create the remaining needed data
         self.model = self.form_class.Meta.model
-        self.create_url_name = f"creator-{self.slug}-create"
-        self.delete_url_name = f"creator-{self.slug}-delete"
-        self.index_url_name = f"creator-{self.slug}-index"
-        self.update_url_name = f"creator-{self.slug}-update"
+        self.create_url_name = f"djangoclarity-{self.slug}-create"
+        self.delete_url_name = f"djangoclarity-{self.slug}-delete"
+        self.index_url_name = f"djangoclarity-{self.slug}-index"
+        self.update_url_name = f"djangoclarity-{self.slug}-update"
         self.index_redirect_url_name = f"{self.index_url_name}-redirect"
         self.success_url = reverse_lazy(self.index_url_name)
 
         super().__init__(*args, **kwargs)
 
 
-class BaseCreatorCreateView(CreateView):
+class BaseDjangoClarityCreateView(CreateView):
     """
     Base view for creating a parent model instance (form).
     """
 
-    template_name = "djangoclarity/base_creator_create_template.html"
+    template_name = "djangoclarity/base_create_template.html"
     formsets = []
 
     def get_context_data(self, **kwargs):
@@ -214,14 +216,13 @@ class BaseCreatorCreateView(CreateView):
         return reverse(self.update_url_name, kwargs={"pk": self.object.pk})
 
 
-class BaseCreatorUpdateView(UpdateView):
+class BaseDjangoClarityUpdateView(UpdateView):
     """
     Base view for updating a parent model instance (form)
     and children model instances (formsets).
     """
 
-    # The HTML template used to render the Creator frontend
-    template_name = "djangoclarity/base_creator_update_template.html"
+    template_name = "djangoclarity/base_update_template.html"
     formsets = []
 
     def get_context_data(self, **kwargs):
@@ -326,9 +327,8 @@ class BaseCreatorUpdateView(UpdateView):
         return super().post(request, **kwargs)
 
 
-class BaseCreatorIndexView(ListView):
-    template_name = "djangoclarity/base_creator_index_template.html"
-    base_template = "djangoclarity/base.html"
+class BaseDjangoClarityListView(ListView):
+    template_name = "djangoclarity/base_index_template.html"
     items_per_page = 10
     order_by_fields = ("id",)
     paginate_by = 10
@@ -599,7 +599,7 @@ class BaseCreatorIndexView(ListView):
 
         # TODO: I'm definitely duplicating efforts with the pagination thing. Look into the Django Paginator class and see if there's a way to override its object_list or page_obj or whatever, so that we can add in the Delete and Update URLs as extra attributes. That way we won't have to write our own pagination methods.
 
-        pprint.pp(context, indent=2)
+        # pprint.pp(context, indent=2)
         # context["paginator"].object_list = self.update_object_list(context["paginator"])
 
         # pprint.pp(context["paginator"].object_list)
@@ -607,14 +607,17 @@ class BaseCreatorIndexView(ListView):
         return context
 
 
-class BaseCreatorDeleteView(DeleteView):
-    template_name = "djangoclarity/base_creator_delete_template.html"
+class BaseDjangoClarityDeleteView(DeleteView):
+    template_name = "djangoclarity/base_delete_template.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         # Index URL
         context["index_url"] = reverse(self.index_url_name)
+
+        # Add model verbose name for template use
+        context["model_verbose_name"] = self.model._meta.verbose_name
 
         return context
 
@@ -628,17 +631,17 @@ class BaseCreatorDeleteView(DeleteView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class CreatorCreateView(BaseCreatorView, BaseCreatorCreateView):
+class DjangoClarityCreateView(BaseDjangoClarityView, BaseDjangoClarityCreateView):
     pass
 
 
-class CreatorDeleteView(BaseCreatorView, BaseCreatorDeleteView):
+class DjangoClarityDeleteView(BaseDjangoClarityView, BaseDjangoClarityDeleteView):
     pass
 
 
-class CreatorIndexView(BaseCreatorView, BaseCreatorIndexView):
+class DjangoClarityListView(BaseDjangoClarityView, BaseDjangoClarityListView):
     pass
 
 
-class CreatorUpdateView(BaseCreatorView, BaseCreatorUpdateView):
+class DjangoClarityUpdateView(BaseDjangoClarityView, BaseDjangoClarityUpdateView):
     pass

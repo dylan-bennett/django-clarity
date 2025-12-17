@@ -2,14 +2,14 @@ from django.urls import path
 from django.views.generic import RedirectView
 
 from .views import (
-    CreatorCreateView,
-    CreatorDeleteView,
-    CreatorIndexView,
-    CreatorUpdateView,
+    DjangoClarityCreateView,
+    DjangoClarityDeleteView,
+    DjangoClarityListView,
+    DjangoClarityUpdateView,
 )
 
 
-def generate_creator_urls(
+def generate_djangoclarity_urls(
     slug,
     form,
     formsets=None,
@@ -22,51 +22,58 @@ def generate_creator_urls(
     if formsets is None:
         formsets = []
     if create_view_class is None:
-        create_view_class = CreatorCreateView
+        create_view_class = DjangoClarityCreateView
     if delete_view_class is None:
-        delete_view_class = CreatorDeleteView
+        delete_view_class = DjangoClarityDeleteView
     if index_view_class is None:
-        index_view_class = CreatorIndexView
+        index_view_class = DjangoClarityListView
     if update_view_class is None:
-        update_view_class = CreatorUpdateView
+        update_view_class = DjangoClarityUpdateView
+
+    app_label = form.Meta.model._meta.app_label
 
     # Return the URLs for the Views
     return [
         # Main paths
         path(
-            f"creator/{slug}/create/",
+            f"djangoclarity/{app_label}/{slug}/add/",
             create_view_class.as_view(slug=slug, form_class=form, formsets=formsets),
-            name=f"creator-{slug}-create",
+            name=f"djangoclarity-{slug}-create",
         ),
         path(
-            f"creator/{slug}/delete/<int:pk>/",
+            f"djangoclarity/{app_label}/{slug}/<int:pk>/delete/",
             delete_view_class.as_view(slug=slug, form_class=form, formsets=formsets),
-            name=f"creator-{slug}-delete",
+            name=f"djangoclarity-{slug}-delete",
         ),
         path(
-            f"creator/{slug}/index/",
+            f"djangoclarity/{app_label}/{slug}/",
             index_view_class.as_view(slug=slug, form_class=form, formsets=formsets),
-            name=f"creator-{slug}-index",
+            name=f"djangoclarity-{slug}-index",
         ),
         path(
-            f"creator/{slug}/update/<int:pk>/",
+            f"djangoclarity/{app_label}/{slug}/<int:pk>/change/",
             update_view_class.as_view(slug=slug, form_class=form, formsets=formsets),
-            name=f"creator-{slug}-update",
+            name=f"djangoclarity-{slug}-update",
         ),
         # Redirect paths
         path(
-            f"creator/{slug}/",
-            RedirectView.as_view(pattern_name=f"creator-{slug}-index"),
-            name=f"creator-{slug}-index-redirect",
+            f"djangoclarity/{app_label}/{slug}/index/",
+            RedirectView.as_view(pattern_name=f"djangoclarity-{slug}-index"),
+            # name=f"djangoclarity-{slug}-index-redirect",
         ),
         path(
-            f"creator/{slug}/delete/",
-            RedirectView.as_view(pattern_name=f"creator-{slug}-index"),
-            name=f"creator-{slug}-index-redirect",
+            f"djangoclarity/{app_label}/{slug}/delete/",
+            RedirectView.as_view(pattern_name=f"djangoclarity-{slug}-index"),
+            # name=f"djangoclarity-{slug}-delete-redirect",
         ),
         path(
-            f"creator/{slug}/update/",
-            RedirectView.as_view(pattern_name=f"creator-{slug}-index"),
-            name=f"creator-{slug}-index-redirect",
+            f"djangoclarity/{app_label}/{slug}/change/",
+            RedirectView.as_view(pattern_name=f"djangoclarity-{slug}-index"),
+            # name=f"djangoclarity-{slug}-index-redirect",
+        ),
+        path(
+            f"djangoclarity/{app_label}/{slug}/<int:pk>/",
+            RedirectView.as_view(pattern_name=f"djangoclarity-{slug}-update"),
+            # name=f"djangoclarity-{slug}-index-redirect",
         ),
     ]

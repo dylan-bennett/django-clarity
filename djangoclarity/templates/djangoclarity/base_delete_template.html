@@ -2,7 +2,7 @@
 {% load django_bootstrap5 %}
 
 {% block title %}
-{{ block.super }} | {{ model_verbose_name|title }} Creator Delete
+{{ block.super }} | Delete {{ model_verbose_name|title }}
 {% endblock title %}
 
 {% block content %}
@@ -12,14 +12,14 @@
 
     <!-- Page header -->
     <div class="d-flex align-items-center justify-content-between w-100 mb-3">
-      <h1>{{ model_verbose_name|title }} Creator Delete</h1>
+      <h1>Delete {{ model_verbose_name|title }}</h1>
       <div class="d-flex align-items-center">
         <a href="{{ index_url }}" class="me-2">Back To Index</a>
       </div>
     </div>
 
     <!-- Confirmation text -->
-    <p>Are you sure you want to delete "{{ object }}"?</p>
+    <p>Are you sure you want to delete {{ model_verbose_name|title }} "{{ object }}"?</p>
     <p><strong>WARNING: THIS CANNOT BE UNDONE!</strong></p>
 
     <!-- Buttons at the bottom -->

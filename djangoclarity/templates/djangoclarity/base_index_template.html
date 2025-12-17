@@ -2,19 +2,19 @@
 {% load django_bootstrap5 clarity_extras %}
 
 {% block title %}
-{{ block.super }} | {{ model_verbose_name|title }} Creator Index
+{{ block.super }} | {{ model_verbose_name|title }} Index
 {% endblock title %}
 
 {% block content %}
 <div class="container py-3">
   <!-- Page header -->
   <div class="d-flex align-items-center justify-content-between w-100 mb-3">
-    <h1>{{ model_verbose_name|title }} Creator Index</h1>
+    <h1>{{ model_verbose_name|title }} Index</h1>
     <div class="d-flex align-items-center">
       <!-- Option to put in custom header content ie. an extra link -->
-      {% block creator_header_nav_links %}
+      {% block djangoclarity_index_header_nav_links %}
       <a href="{% url 'admin:index' %}" class="me-2">Back To Admin</a>
-      {% endblock creator_header_nav_links %}
+      {% endblock djangoclarity_index_header_nav_links %}
 
       {% bootstrap_button "Create" href=create_url button_class="btn-success" %}
     </div>
