@@ -1,4 +1,5 @@
 from django.forms import ModelForm
+from django.forms.models import inlineformset_factory
 from django.urls import path
 from django.views.generic import RedirectView
 
@@ -8,6 +9,38 @@ from .views import (
     DjangoClarityListView,
     DjangoClarityUpdateView,
 )
+
+
+def create_inline_formsets(model, inlines):
+    formsets = []
+    for inline in inlines:
+        Meta = type(
+            "Meta",
+            (),
+            {
+                "model": inline.model,
+                "fields": inline.fields,
+                "widgets": inline.widgets,
+            },
+        )
+        attrs = {"Meta": Meta}
+
+        formset_form_class = type(
+            f"DjangoClarity{model._meta.model_name}{inline.model._meta.model_name}InlineModelForm",
+            (ModelForm,),
+            attrs,
+        )
+
+        formsets.append(
+            inlineformset_factory(
+                model,
+                inline.model,
+                form=formset_form_class,
+                extra=inline.extra,
+            )
+        )
+
+    return formsets
 
 
 def create_model_form_class(model, model_admin):
@@ -21,6 +54,7 @@ def create_model_form_class(model, model_admin):
             "model": model,
             "fields": model_admin.fields,
             "widgets": model_admin.widgets,
+            # "readonly_fields": model_admin.readonly_fields,
             "url_names": {
                 "create_url_name": f"{url_name_prefix}-create",
                 "delete_url_name": f"{url_name_prefix}-delete",
@@ -76,7 +110,7 @@ class AdminSite:
 
         # Go through each registered model
         for model, model_admin in self._registry.items():
-            formsets = model_admin.inlines
+            formsets = create_inline_formsets(model, model_admin.inlines)
             create_view_class = model_admin.create_view_class
             delete_view_class = model_admin.delete_view_class
             index_view_class = model_admin.index_view_class
