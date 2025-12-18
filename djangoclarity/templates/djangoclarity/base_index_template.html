@@ -16,7 +16,7 @@
       <a href="{% url 'admin:index' %}" class="me-2">Back To Admin</a>
       {% endblock djangoclarity_index_header_nav_links %}
 
-      {% bootstrap_button "Create" href=create_url button_class="btn-success" %}
+      {% bootstrap_button "Create" href={{ create_url_name|get_reverse_url }} button_class="btn-success" %}
     </div>
   </div>
 

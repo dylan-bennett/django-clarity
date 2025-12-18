@@ -1,4 +1,5 @@
 from django import template
+from django.urls import reverse
 
 register = template.Library()
 
@@ -7,6 +8,11 @@ register = template.Library()
 @register.filter
 def get_item(d, key):
     return d.get(key)
+
+
+@register.filter
+def get_reverse_url(name):
+    return reverse(name)
 
 
 # Inclusion tag for rendering a single form field

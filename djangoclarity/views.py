@@ -6,7 +6,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.forms import model_to_dict
 from django.http import HttpResponseRedirect
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 
@@ -43,10 +43,15 @@ class DjangoClarityBaseView:
 
         # Create the remaining needed data
         self.model = self.form_class.Meta.model
-        self.create_url_name = f"djangoclarity-{self.slug}-create"
-        self.delete_url_name = f"djangoclarity-{self.slug}-delete"
-        self.index_url_name = f"djangoclarity-{self.slug}-index"
-        self.update_url_name = f"djangoclarity-{self.slug}-update"
+        # self.create_url_name =  f"djangoclarity-{self.slug}-create"
+        # self.delete_url_name = f"djangoclarity-{self.slug}-delete"
+        # self.index_url_name = f"djangoclarity-{self.slug}-index"
+        # self.update_url_name = f"djangoclarity-{self.slug}-update"
+
+        self.create_url_name = self.form_class.Meta.reverse_names["create"]
+        self.delete_url_name = self.form_class.Meta.reverse_names["delete"]
+        self.index_url_name = self.form_class.Meta.reverse_names["index"]
+        self.update_url_name = self.form_class.Meta.reverse_names["update"]
         self.index_redirect_url_name = f"{self.index_url_name}-redirect"
         self.success_url = reverse_lazy(self.index_url_name)
 
@@ -168,7 +173,7 @@ class DjangoClarityCreateView(DjangoClarityBaseView, CreateView):
         ]
 
         # Index URL
-        context["index_url"] = reverse(self.index_url_name)
+        context["index_url"] = reverse_lazy(self.index_url_name)
 
         # Add model verbose name for template use
         context["model_verbose_name"] = self.model._meta.verbose_name
@@ -179,7 +184,7 @@ class DjangoClarityCreateView(DjangoClarityBaseView, CreateView):
         """
         After successful save, redirect to the update view for the parent model instance.
         """
-        return reverse(self.update_url_name, kwargs={"pk": self.object.pk})
+        return reverse_lazy(self.update_url_name, kwargs={"pk": self.object.pk})
 
 
 class DjangoClarityUpdateView(DjangoClarityBaseView, UpdateView):
@@ -218,10 +223,10 @@ class DjangoClarityUpdateView(DjangoClarityBaseView, UpdateView):
         context["all_errors"] = all_errors
 
         # Index URL
-        context["index_url"] = reverse(self.index_url_name)
+        context["index_url"] = reverse_lazy(self.index_url_name)
 
         # Delete URL
-        context["delete_url"] = reverse(
+        context["delete_url"] = reverse_lazy(
             self.delete_url_name, kwargs={"pk": self.object.pk}
         )
 
@@ -261,7 +266,7 @@ class DjangoClarityUpdateView(DjangoClarityBaseView, UpdateView):
         """
         After successful save, redirect to the update view for the parent model instance.
         """
-        return reverse(self.update_url_name, kwargs={"pk": self.object.pk})
+        return reverse_lazy(self.update_url_name, kwargs={"pk": self.object.pk})
 
 
 class DjangoClarityListView(DjangoClarityBaseView, ListView):
@@ -363,10 +368,10 @@ class DjangoClarityListView(DjangoClarityBaseView, ListView):
 
             # Add in final columns of the Update & Delete URLs
             d[self.update_url_name] = (
-                reverse(self.update_url_name, kwargs={"pk": obj.pk}),
+                reverse_lazy(self.update_url_name, kwargs={"pk": obj.pk}),
             )
             d[self.delete_url_name] = (
-                reverse(self.delete_url_name, kwargs={"pk": obj.pk}),
+                reverse_lazy(self.delete_url_name, kwargs={"pk": obj.pk}),
             )
 
             # Add the row of information to the list of items. Use the `get_{attr_name}_display()` method if it exists.
@@ -448,10 +453,10 @@ class DjangoClarityListView(DjangoClarityBaseView, ListView):
             d.update(self._get_extra_items(obj))
 
             # Add in final columns of the Update & Delete URLs
-            d[self.update_url_name] = reverse(
+            d[self.update_url_name] = reverse_lazy(
                 self.update_url_name, kwargs={"pk": obj.pk}
             )
-            d[self.delete_url_name] = reverse(
+            d[self.delete_url_name] = reverse_lazy(
                 self.delete_url_name, kwargs={"pk": obj.pk}
             )
 
@@ -486,10 +491,10 @@ class DjangoClarityListView(DjangoClarityBaseView, ListView):
             d.update(self._get_extra_items(obj))
 
             # Add in final columns of the Update & Delete URLs
-            d[self.update_url_name] = reverse(
+            d[self.update_url_name] = reverse_lazy(
                 self.update_url_name, kwargs={"pk": obj.pk}
             )
-            d[self.delete_url_name] = reverse(
+            d[self.delete_url_name] = reverse_lazy(
                 self.delete_url_name, kwargs={"pk": obj.pk}
             )
 
@@ -519,7 +524,8 @@ class DjangoClarityListView(DjangoClarityBaseView, ListView):
         context["delete_url_name"] = self.delete_url_name
 
         # Add in the Create URL name
-        context["create_url"] = reverse(self.create_url_name)
+        # context["create_url"] = reverse_lazy(self.create_url_name)
+        context["create_url_name"] = self.create_url_name
 
         # Add model verbose name for template use
         context["model_verbose_name"] = self.model._meta.verbose_name
@@ -545,7 +551,7 @@ class DjangoClarityDeleteView(DjangoClarityBaseView, DeleteView):
         context = super().get_context_data(**kwargs)
 
         # Index URL
-        context["index_url"] = reverse(self.index_url_name)
+        context["index_url"] = reverse_lazy(self.index_url_name)
 
         # Add model verbose name for template use
         context["model_verbose_name"] = self.model._meta.verbose_name
