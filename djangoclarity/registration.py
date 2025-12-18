@@ -64,6 +64,7 @@ class InlineModelAdmin:
 
 class AdminSite:
     _registry = {}
+    _namespace = "djangoclarity"
 
     def register(self, model, model_admin=None):
         # Set up the default Model Admin class, if necessary
@@ -84,27 +85,38 @@ class AdminSite:
             update_view_class = model_admin.update_view_class
             form = create_model_form_class(model, model_admin)
             url_prefix = f"{model._meta.app_label}/{model._meta.model_name}"
+            # url_prefix = (
+            #     f"djangoclarity/{model._meta.app_label}/{model._meta.model_name}"
+            # )
 
             urlpatterns += [
                 # Main paths
                 path(
                     f"{url_prefix}/add/",
-                    create_view_class.as_view(form_class=form, formsets=formsets),
+                    create_view_class.as_view(
+                        form_class=form, formsets=formsets, namespace=self._namespace
+                    ),
                     name=form.Meta.url_names["create_url_name"],
                 ),
                 path(
                     f"{url_prefix}/<int:pk>/delete/",
-                    delete_view_class.as_view(form_class=form, formsets=formsets),
+                    delete_view_class.as_view(
+                        form_class=form, formsets=formsets, namespace=self._namespace
+                    ),
                     name=form.Meta.url_names["delete_url_name"],
                 ),
                 path(
                     f"{url_prefix}/",
-                    index_view_class.as_view(form_class=form, formsets=formsets),
+                    index_view_class.as_view(
+                        form_class=form, formsets=formsets, namespace=self._namespace
+                    ),
                     name=form.Meta.url_names["index_url_name"],
                 ),
                 path(
                     f"{url_prefix}/<int:pk>/change/",
-                    update_view_class.as_view(form_class=form, formsets=formsets),
+                    update_view_class.as_view(
+                        form_class=form, formsets=formsets, namespace=self._namespace
+                    ),
                     name=form.Meta.url_names["update_url_name"],
                 ),
                 # Redirect paths
@@ -138,7 +150,7 @@ class AdminSite:
 
     @property
     def urls(self):
-        return self.get_urls(), "djangoclarity"
+        return self.get_urls(), self._namespace
 
 
 site = AdminSite()
