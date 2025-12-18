@@ -26,7 +26,6 @@ def create_model_form_class(model, model_admin):
                 "delete_url_name": f"{url_name_prefix}-delete",
                 "index_url_name": f"{url_name_prefix}-index",
                 "update_url_name": f"{url_name_prefix}-update",
-                # "index_redirect_url_name": f"{self.index_url_name}-redirect",
             },
         },
     )
@@ -47,7 +46,6 @@ class ModelAdmin:
     readonly_fields = ()
     widgets = {}
     inlines = []
-    # slug = None
     create_view_class = DjangoClarityCreateView
     delete_view_class = DjangoClarityDeleteView
     index_view_class = DjangoClarityListView
@@ -85,9 +83,6 @@ class AdminSite:
             update_view_class = model_admin.update_view_class
             form = create_model_form_class(model, model_admin)
             url_prefix = f"{model._meta.app_label}/{model._meta.model_name}"
-            # url_prefix = (
-            #     f"djangoclarity/{model._meta.app_label}/{model._meta.model_name}"
-            # )
 
             urlpatterns += [
                 # Main paths
@@ -123,25 +118,25 @@ class AdminSite:
                 path(
                     f"{url_prefix}/index/",
                     RedirectView.as_view(
-                        pattern_name=form.Meta.url_names["index_url_name"]
+                        pattern_name=f"{self._namespace}:{form.Meta.url_names['index_url_name']}"
                     ),
                 ),
                 path(
                     f"{url_prefix}/delete/",
                     RedirectView.as_view(
-                        pattern_name=form.Meta.url_names["index_url_name"]
+                        pattern_name=f"{self._namespace}:{form.Meta.url_names['index_url_name']}"
                     ),
                 ),
                 path(
                     f"{url_prefix}/change/",
                     RedirectView.as_view(
-                        pattern_name=form.Meta.url_names["index_url_name"]
+                        pattern_name=f"{self._namespace}:{form.Meta.url_names['index_url_name']}"
                     ),
                 ),
                 path(
                     f"{url_prefix}/<int:pk>/",
                     RedirectView.as_view(
-                        pattern_name=form.Meta.url_names["update_url_name"]
+                        pattern_name=f"{self._namespace}:{form.Meta.url_names['update_url_name']}"
                     ),
                 ),
             ]
