@@ -20,14 +20,14 @@ class DjangoClarityBaseView:
 
     def __init__(self, *args, **kwargs):
         # Extract the required data from .as_view()'s kwargs
-        # Slug
-        try:
-            self.slug = kwargs.pop("slug")
-        except KeyError:
-            raise TypeError(
-                "%s() missing required keyword argument: 'slug'"
-                % (self.__class__.__name__,)
-            )
+        # # Slug
+        # try:
+        #     self.slug = kwargs.pop("slug")
+        # except KeyError:
+        #     raise TypeError(
+        #         "%s() missing required keyword argument: 'slug'"
+        #         % (self.__class__.__name__,)
+        #     )
 
         # Form
         try:
@@ -43,13 +43,20 @@ class DjangoClarityBaseView:
 
         # Create the remaining needed data
         self.model = self.form_class.Meta.model
-        self.create_url_name = f"djangoclarity-{self.slug}-create"
-        self.delete_url_name = f"djangoclarity-{self.slug}-delete"
-        self.index_url_name = f"djangoclarity-{self.slug}-index"
-        self.update_url_name = f"djangoclarity-{self.slug}-update"
-        self.index_redirect_url_name = f"{self.index_url_name}-redirect"
+        # self.create_url_name = f"djangoclarity-{self.slug}-create"
+        # self.delete_url_name = f"djangoclarity-{self.slug}-delete"
+        # self.index_url_name = f"djangoclarity-{self.slug}-index"
+        # self.update_url_name = f"djangoclarity-{self.slug}-update"
+        self.create_url_name = self.form_class.Meta.url_names["create_url_name"]
+        self.delete_url_name = self.form_class.Meta.url_names["delete_url_name"]
+        self.index_url_name = self.form_class.Meta.url_names["index_url_name"]
+        self.update_url_name = self.form_class.Meta.url_names["update_url_name"]
+        # self.index_redirect_url_name = f"{self.index_url_name}-redirect"
+
+        # Set a custom success_url for after updating the database
         self.success_url = reverse_lazy(self.index_url_name)
 
+        # TODO: do I need to do this? DjangoClarityBaseView doesn't have a superclass
         super().__init__(*args, **kwargs)
 
     def get_form_errors(self, form):
