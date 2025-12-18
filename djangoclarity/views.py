@@ -44,10 +44,17 @@ class DjangoClarityBaseView:
 
         # Create the remaining needed data
         self.model = self.form_class.Meta.model
-        self.create_url_name = self.form_class.Meta.url_names["create_url_name"]
-        self.delete_url_name = self.form_class.Meta.url_names["delete_url_name"]
-        self.index_url_name = self.form_class.Meta.url_names["index_url_name"]
-        self.update_url_name = self.form_class.Meta.url_names["update_url_name"]
+        url_name_prefix = (
+            f"djangoclarity-{self.model._meta.app_label}-{self.model._meta.model_name}"
+        )
+        # self.create_url_name = self.form_class.Meta.url_names["create_url_name"]
+        # self.delete_url_name = self.form_class.Meta.url_names["delete_url_name"]
+        # self.index_url_name = self.form_class.Meta.url_names["index_url_name"]
+        # self.update_url_name = self.form_class.Meta.url_names["update_url_name"]
+        self.create_url_name = f"{url_name_prefix}-create"
+        self.delete_url_name = f"{url_name_prefix}-delete"
+        self.index_url_name = f"{url_name_prefix}-index"
+        self.update_url_name = f"{url_name_prefix}-update"
 
         # Set a custom success_url for after updating the database
         self.success_url = reverse_lazy(f"{self.namespace}:{self.index_url_name}")

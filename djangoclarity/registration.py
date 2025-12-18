@@ -1,5 +1,5 @@
 from django.forms import ModelForm
-from django.forms.models import inlineformset_factory
+from django.forms.models import inlineformset_factory, modelform_factory
 from django.urls import path
 from django.views.generic import RedirectView
 
@@ -14,21 +14,28 @@ from .views import (
 def create_inline_formsets(model, inlines):
     formsets = []
     for inline in inlines:
-        Meta = type(
-            "Meta",
-            (),
-            {
-                "model": inline.model,
-                "fields": inline.fields,
-                "widgets": inline.widgets,
-            },
-        )
-        attrs = {"Meta": Meta}
+        # Meta = type(
+        #     "Meta",
+        #     (),
+        #     {
+        #         "model": inline.model,
+        #         "fields": inline.fields,
+        #         "widgets": inline.widgets,
+        #     },
+        # )
+        # attrs = {"Meta": Meta}
 
-        formset_form_class = type(
-            f"DjangoClarity{model._meta.model_name}{inline.model._meta.model_name}InlineModelForm",
-            (ModelForm,),
-            attrs,
+        # formset_form_class = type(
+        #     f"DjangoClarity{model._meta.model_name}{inline.model._meta.model_name}InlineModelForm",
+        #     (ModelForm,),
+        #     attrs,
+        # )
+
+        formset_form_class = modelform_factory(
+            inline.model,
+            ModelForm,
+            fields=inline.fields,
+            widgets=inline.widgets,
         )
 
         formsets.append(
@@ -44,35 +51,61 @@ def create_inline_formsets(model, inlines):
 
 
 def create_model_form_class(model, model_admin):
-    url_name_prefix = f"djangoclarity-{model._meta.app_label}-{model._meta.model_name}"
+    # url_name_prefix = f"djangoclarity-{model._meta.app_label}-{model._meta.model_name}"
 
-    # Create the Meta class dynamically
-    Meta = type(
-        "Meta",
-        (),
-        {
-            "model": model,
-            "fields": model_admin.fields,
-            "widgets": model_admin.widgets,
-            # "readonly_fields": model_admin.readonly_fields,
-            "url_names": {
-                "create_url_name": f"{url_name_prefix}-create",
-                "delete_url_name": f"{url_name_prefix}-delete",
-                "index_url_name": f"{url_name_prefix}-index",
-                "update_url_name": f"{url_name_prefix}-update",
-            },
-        },
-    )
+    # # Create the Meta class dynamically
+    # Meta = type(
+    #     "Meta",
+    #     (),
+    #     {
+    #         "model": model,
+    #         # "fields": tuple(
+    #         #     field
+    #         #     for field in model_admin.fields
+    #         #     if field not in model_admin.readonly_fields
+    #         # ),
+    #         "fields": model_admin.fields,
+    #         "widgets": model_admin.widgets,
+    #         # "readonly_fields": model_admin.readonly_fields,
+    #         "url_names": {
+    #             "create_url_name": f"{url_name_prefix}-create",
+    #             "delete_url_name": f"{url_name_prefix}-delete",
+    #             "index_url_name": f"{url_name_prefix}-index",
+    #             "update_url_name": f"{url_name_prefix}-update",
+    #         },
+    #     },
+    # )
 
     # Create the new ModelForm class
-    attrs = {"Meta": Meta}
-    form_class = type(
-        f"DjangoClarity{model._meta.app_label}{model._meta.model_name}ModelForm",
-        (ModelForm,),
-        attrs,
+    # attrs = {"Meta": Meta}
+    # FormClass = type(
+    #     f"DjangoClarity{model._meta.app_label}{model._meta.model_name}ModelForm",
+    #     (ModelForm,),
+    #     attrs,
+    # )
+
+    FormClass = modelform_factory(
+        model,
+        ModelForm,
+        fields=model_admin.fields,
+        widgets=model_admin.widgets,
     )
 
-    return form_class
+    # # Extend the class to add in the __init__ function for any readonly fields
+    # class FormClass(FormClass):
+    #     def __init__(self, *args, **kwargs):
+    #         super().__init__(*args, **kwargs)
+    #         if self.instance:
+    #             for readonly_field in model_admin.readonly_fields:
+    #                 self.fields[readonly_field].disabled = True
+    #                 self.fields[readonly_field].initial = getattr(
+    #                     self.instance, readonly_field
+    #                 )
+
+    # for readonly_field in model_admin.readonly_fields:
+    #     setattr(form_class, readonly_field, )
+
+    return FormClass
 
 
 class ModelAdmin:
@@ -118,6 +151,10 @@ class AdminSite:
             form = create_model_form_class(model, model_admin)
             url_prefix = f"{model._meta.app_label}/{model._meta.model_name}"
 
+            url_name_prefix = (
+                f"djangoclarity-{model._meta.app_label}-{model._meta.model_name}"
+            )
+
             urlpatterns += [
                 # Main paths
                 path(
@@ -125,54 +162,58 @@ class AdminSite:
                     create_view_class.as_view(
                         form_class=form, formsets=formsets, namespace=self._namespace
                     ),
-                    name=form.Meta.url_names["create_url_name"],
+                    # name=form.Meta.url_names["create_url_name"],
+                    name=f"{url_name_prefix}-create",
                 ),
                 path(
                     f"{url_prefix}/<int:pk>/delete/",
                     delete_view_class.as_view(
                         form_class=form, formsets=formsets, namespace=self._namespace
                     ),
-                    name=form.Meta.url_names["delete_url_name"],
+                    # name=form.Meta.url_names["delete_url_name"],
+                    name=f"{url_name_prefix}-delete",
                 ),
                 path(
                     f"{url_prefix}/",
                     index_view_class.as_view(
                         form_class=form, formsets=formsets, namespace=self._namespace
                     ),
-                    name=form.Meta.url_names["index_url_name"],
+                    # name=form.Meta.url_names["index_url_name"],
+                    name=f"{url_name_prefix}-index",
                 ),
                 path(
                     f"{url_prefix}/<int:pk>/change/",
                     update_view_class.as_view(
                         form_class=form, formsets=formsets, namespace=self._namespace
                     ),
-                    name=form.Meta.url_names["update_url_name"],
+                    # name=form.Meta.url_names["update_url_name"],
+                    name=f"{url_name_prefix}-update",
                 ),
                 # Redirect paths
-                path(
-                    f"{url_prefix}/index/",
-                    RedirectView.as_view(
-                        pattern_name=f"{self._namespace}:{form.Meta.url_names['index_url_name']}"
-                    ),
-                ),
-                path(
-                    f"{url_prefix}/delete/",
-                    RedirectView.as_view(
-                        pattern_name=f"{self._namespace}:{form.Meta.url_names['index_url_name']}"
-                    ),
-                ),
-                path(
-                    f"{url_prefix}/change/",
-                    RedirectView.as_view(
-                        pattern_name=f"{self._namespace}:{form.Meta.url_names['index_url_name']}"
-                    ),
-                ),
-                path(
-                    f"{url_prefix}/<int:pk>/",
-                    RedirectView.as_view(
-                        pattern_name=f"{self._namespace}:{form.Meta.url_names['update_url_name']}"
-                    ),
-                ),
+                # path(
+                #     f"{url_prefix}/index/",
+                #     RedirectView.as_view(
+                #         pattern_name=f"{self._namespace}:{form.Meta.url_names['index_url_name']}"
+                #     ),
+                # ),
+                # path(
+                #     f"{url_prefix}/delete/",
+                #     RedirectView.as_view(
+                #         pattern_name=f"{self._namespace}:{form.Meta.url_names['index_url_name']}"
+                #     ),
+                # ),
+                # path(
+                #     f"{url_prefix}/change/",
+                #     RedirectView.as_view(
+                #         pattern_name=f"{self._namespace}:{form.Meta.url_names['index_url_name']}"
+                #     ),
+                # ),
+                # path(
+                #     f"{url_prefix}/<int:pk>/",
+                #     RedirectView.as_view(
+                #         pattern_name=f"{self._namespace}:{form.Meta.url_names['update_url_name']}"
+                #     ),
+                # ),
             ]
 
         return urlpatterns
