@@ -7,56 +7,56 @@
 
 {% block content %}
 <div class="container py-3">
-      <form method="post" enctype="multipart/form-data" class="d-flex flex-column">
-      {% csrf_token %}
+  <form method="post" enctype="multipart/form-data" class="d-flex flex-column">
+    {% csrf_token %}
 
-      <!-- Page header -->
-      <div class="d-flex align-items-center justify-content-between w-100 mb-3">
-        <h1>Update {{ model_verbose_name|title }}</h1>
+    <!-- Page header -->
+    <div class="d-flex align-items-center justify-content-between w-100 mb-3">
+      <h1>Update {{ model_verbose_name|title }}</h1>
 
-        <!-- Navigation -->
-        <div class="d-flex align-items-center">
-          {% block index_links %}
-          <a href="{{ index_url }}" class="me-2">Back To Index</a>
-          {% endblock index_links %}
-          {% bootstrap_button "Update" button_type="submit" button_class="btn-success me-2" %}
-          {% bootstrap_button "Delete" href=delete_url button_class="btn-danger" %}
-        </div>
+      <!-- Navigation -->
+      <div class="d-flex align-items-center">
+        {% block index_links %}
+        <a href="{{ index_url }}" class="me-2">Back To Index</a>
+        {% endblock index_links %}
+        {% bootstrap_button "Update" button_type="submit" button_class="btn-success me-2" %}
+        {% bootstrap_button "Delete" href=delete_url button_class="btn-danger" %}
       </div>
+    </div>
 
-      <!-- All form & formset errors displayed at the top -->
-      {% if all_errors %}
-      <div class="alert alert-danger mb-4" role="alert">
-        <h4 class="alert-heading">Please fix the following errors:</h4>
-        <ul class="mb-0">
-          {% for error in all_errors %}
-          <li>{{ error }}</li>
-          {% endfor %}
-        </ul>
-      </div>
-      {% endif %}
-
-      <!-- Form header -->
-      <h2>{{ model_verbose_name|title }}</h2>
-
-      <!-- Render the form -->
-      {% djangoclarity_render_form form %}
-
-      <!-- Go through all of the formsets and render them -->
-      {% block render_formsets_block %}
-        {% for formset in formsets %}
-          {% djangoclarity_render_formset formset %}
+    <!-- All form & formset errors displayed at the top -->
+    {% if all_errors %}
+    <div class="alert alert-danger mb-4" role="alert">
+      <h4 class="alert-heading">Please fix the following errors:</h4>
+      <ul class="mb-0">
+        {% for error in all_errors %}
+        <li>{{ error }}</li>
         {% endfor %}
-      {% endblock render_formsets_block %}
+      </ul>
+    </div>
+    {% endif %}
 
-      <!-- Navigation at the bottom -->
-      <div class="d-flex justify-content-end w-100">
-        <div class="d-flex align-items-center">
-          <a href="{{ index_url }}" class="me-2">Back To Index</a>
-          {% bootstrap_button "Update" button_type="submit" button_class="btn-success me-2" %}
-          {% bootstrap_button "Delete" href=delete_url button_class="btn-danger" %}
-        </div>
+    <!-- Form header -->
+    <h2>{{ model_verbose_name|title }}</h2>
+
+    <!-- Render the form -->
+    {% djangoclarity_render_form form %}
+
+    <!-- Go through all of the formsets and render them -->
+    {% block render_formsets_block %}
+      {% for formset in formsets %}
+        {% djangoclarity_render_formset formset %}
+      {% endfor %}
+    {% endblock render_formsets_block %}
+
+    <!-- Navigation at the bottom -->
+    <div class="d-flex justify-content-end w-100">
+      <div class="d-flex align-items-center">
+        <a href="{{ index_url }}" class="me-2">Back To Index</a>
+        {% bootstrap_button "Update" button_type="submit" button_class="btn-success me-2" %}
+        {% bootstrap_button "Delete" href=delete_url button_class="btn-danger" %}
       </div>
-    </form>
+    </div>
+  </form>
 </div>
 {% endblock content %}

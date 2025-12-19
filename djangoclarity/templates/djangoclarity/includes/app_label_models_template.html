@@ -1,0 +1,26 @@
+{% load django_bootstrap5 djangoclarity_extras %}
+
+<div class="card mb-4 shadow-sm">
+  <div class="card-header bg-primary text-white">
+    <h2 class="card-title mb-0">
+      <a href="{{ app_label|get_item:'url' }}" class="text-white text-decoration-none">
+        {{ app_label|get_item:"title" }}
+      </a>
+    </h2>
+  </div>
+  <div class="card-body p-0">
+    {% if models %}
+      <div class="list-group list-group-flush">
+        {% for model in models %}
+          <a href="{{ model|get_item:'url' }}" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between align-items-center">
+              <h5 class="mb-1">{{ model|get_item:"title" }}</h5>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-muted mb-0">No models available.</p>
+    {% endif %}
+  </div>
+</div>
