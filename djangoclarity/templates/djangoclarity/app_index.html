@@ -1,0 +1,29 @@
+{% extends base_template|default:"djangoclarity/base.html" %}
+{% load django_bootstrap5 djangoclarity_extras %}
+
+{% block title %}
+{{ block.super }} | {{ app_label|get_item:"window_title" }} Index
+{% endblock title %}
+
+{% block content %}
+<div class="container py-3">
+  <!-- Page header -->
+  <div class="mb-4">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="../">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ app_label|get_item:"window_title" }}</li>
+      </ol>
+    </nav>
+    <h1 class="display-5 mb-2">{{ app_label|get_item:"window_title" }}</h1>
+    <p class="lead text-muted">Select a model to manage</p>
+  </div>
+
+  <!-- App section -->
+  <div class="row">
+    <div class="col-12">
+      {% include "djangoclarity/includes/app_label_models_template.html" with app_label=app_label models=models %}
+    </div>
+  </div>
+</div>
+{% endblock content %}

@@ -4,10 +4,12 @@ from django.urls import path
 from django.views.generic import RedirectView
 
 from .views import (
-    DjangoClarityCreateView,
-    DjangoClarityDeleteView,
-    DjangoClarityListView,
-    DjangoClarityUpdateView,
+    DjangoClarityAppIndexView,
+    DjangoClarityIndexView,
+    DjangoClarityModelCreateView,
+    DjangoClarityModelDeleteView,
+    DjangoClarityModelListView,
+    DjangoClarityModelUpdateView,
 )
 
 
@@ -113,10 +115,10 @@ class ModelAdmin:
     readonly_fields = ()
     widgets = {}
     inlines = []
-    create_view_class = DjangoClarityCreateView
-    delete_view_class = DjangoClarityDeleteView
-    index_view_class = DjangoClarityListView
-    update_view_class = DjangoClarityUpdateView
+    create_view_class = DjangoClarityModelCreateView
+    delete_view_class = DjangoClarityModelDeleteView
+    index_view_class = DjangoClarityModelListView
+    update_view_class = DjangoClarityModelUpdateView
 
 
 class InlineModelAdmin:
@@ -140,9 +142,15 @@ class AdminSite:
 
     def get_urls(self):
         urlpatterns = []
+        app_label_models_dict = {}
 
         # Go through each registered model
         for model, model_admin in self._registry.items():
+            # Keep track of the model and its app label, for later
+            if model._meta.app_label not in app_label_models_dict:
+                app_label_models_dict[model._meta.app_label] = []
+            app_label_models_dict[model._meta.app_label].append(model)
+
             formsets = create_inline_formsets(model, model_admin.inlines)
             create_view_class = model_admin.create_view_class
             delete_view_class = model_admin.delete_view_class
@@ -190,31 +198,55 @@ class AdminSite:
                     name=f"{url_name_prefix}-update",
                 ),
                 # Redirect paths
-                # path(
-                #     f"{url_prefix}/index/",
-                #     RedirectView.as_view(
-                #         pattern_name=f"{self._namespace}:{form.Meta.url_names['index_url_name']}"
-                #     ),
-                # ),
-                # path(
-                #     f"{url_prefix}/delete/",
-                #     RedirectView.as_view(
-                #         pattern_name=f"{self._namespace}:{form.Meta.url_names['index_url_name']}"
-                #     ),
-                # ),
-                # path(
-                #     f"{url_prefix}/change/",
-                #     RedirectView.as_view(
-                #         pattern_name=f"{self._namespace}:{form.Meta.url_names['index_url_name']}"
-                #     ),
-                # ),
-                # path(
-                #     f"{url_prefix}/<int:pk>/",
-                #     RedirectView.as_view(
-                #         pattern_name=f"{self._namespace}:{form.Meta.url_names['update_url_name']}"
-                #     ),
-                # ),
+                path(
+                    f"{url_prefix}/index/",
+                    RedirectView.as_view(
+                        pattern_name=f"{self._namespace}:{url_name_prefix}-index"
+                    ),
+                ),
+                path(
+                    f"{url_prefix}/delete/",
+                    RedirectView.as_view(
+                        pattern_name=f"{self._namespace}:{url_name_prefix}-index"
+                    ),
+                ),
+                path(
+                    f"{url_prefix}/change/",
+                    RedirectView.as_view(
+                        pattern_name=f"{self._namespace}:{url_name_prefix}-index"
+                    ),
+                ),
+                path(
+                    f"{url_prefix}/<int:pk>/",
+                    RedirectView.as_view(
+                        pattern_name=f"{self._namespace}:{url_name_prefix}-update"
+                    ),
+                ),
             ]
+
+        # Create URL patterns for each app label
+        for app_label, models in app_label_models_dict.items():
+            urlpatterns.append(
+                path(
+                    f"{app_label}/",
+                    DjangoClarityAppIndexView.as_view(
+                        namespace=self._namespace, app_label=app_label, models=models
+                    ),
+                    name=f"djangoclarity-{app_label}-index",
+                )
+            )
+
+        # Create a final URL pattern for the overview index
+        urlpatterns.append(
+            path(
+                "",
+                DjangoClarityIndexView.as_view(
+                    namespace=self._namespace,
+                    app_label_models_dict=app_label_models_dict,
+                ),
+                name="djangoclarity-index",
+            )
+        )
 
         return urlpatterns
 

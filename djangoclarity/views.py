@@ -8,9 +8,124 @@ from django.forms import model_to_dict
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
+from django.views.generic.base import TemplateView
 
 
-class DjangoClarityBaseView:
+class DjangoClarityIndexView(TemplateView):
+    base_template = "djangoclarity/base.html"
+    template_name = "djangoclarity/index.html"
+    namespace = None
+    app_label_models_dict = None
+
+    def __init__(self, *args, **kwargs):
+        # Extract the required data from .as_view()'s kwargs
+        # Namespace
+        try:
+            self.namespace = kwargs.pop("namespace")
+        except KeyError:
+            raise TypeError(
+                "%s() missing required keyword argument: 'namespace'"
+                % (self.__class__.__name__,)
+            )
+
+        # Dictionary of app labels and their models
+        try:
+            self.app_label_models_dict = kwargs.pop("app_label_models_dict")
+        except KeyError:
+            raise TypeError(
+                "%s() missing required keyword argument: 'app_label_models_dict'"
+                % (self.__class__.__name__,)
+            )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["app_labels_models"] = []
+
+        for app_label, models in sorted(self.app_label_models_dict.items()):
+            app_models_dict = {}
+
+            app_models_dict["app_label"] = {
+                "url": reverse(f"{self.namespace}:djangoclarity-{app_label}-index"),
+                "title": app_label.upper(),
+            }
+
+            app_models_dict["models"] = []
+            for model in sorted(models, key=lambda m: m.__name__):
+                app_models_dict["models"].append(
+                    {
+                        "url": reverse(
+                            f"{self.namespace}:djangoclarity-{app_label}-{model._meta.model_name}-index"
+                        ),
+                        "title": model._meta.verbose_name_plural.title(),
+                    }
+                )
+
+            context["app_labels_models"].append(app_models_dict)
+
+        return context
+
+
+class DjangoClarityAppIndexView(TemplateView):
+    base_template = "djangoclarity/base.html"
+    template_name = "djangoclarity/app_index.html"
+    namespace = None
+    app_label = None
+    models = None
+
+    def __init__(self, *args, **kwargs):
+        # Extract the required data from .as_view()'s kwargs
+        # Namespace
+        try:
+            self.namespace = kwargs.pop("namespace")
+        except KeyError:
+            raise TypeError(
+                "%s() missing required keyword argument: 'namespace'"
+                % (self.__class__.__name__,)
+            )
+
+        # App Label
+        try:
+            self.app_label = kwargs.pop("app_label")
+        except KeyError:
+            raise TypeError(
+                "%s() missing required keyword argument: 'app_label'"
+                % (self.__class__.__name__,)
+            )
+
+        # Models
+        try:
+            self.models = kwargs.pop("models")
+        except KeyError:
+            raise TypeError(
+                "%s() missing required keyword argument: 'models'"
+                % (self.__class__.__name__,)
+            )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["app_label"] = {
+            "url": reverse(f"{self.namespace}:djangoclarity-{self.app_label}-index"),
+            "title": self.app_label.upper(),
+            "window_title": self.app_label.title(),
+        }
+
+        context["models"] = []
+        for model in sorted(self.models, key=lambda m: m.__name__):
+            context["models"].append(
+                {
+                    "url": reverse(
+                        f"{self.namespace}:djangoclarity-{self.app_label}-{model._meta.model_name}-index"
+                    ),
+                    "title": model._meta.verbose_name_plural.title(),
+                }
+            )
+
+        return context
+
+
+class DjangoClarityModelBaseView:
     base_template = "djangoclarity/base.html"
 
     # Attributes to be sent into the .as_view() method
@@ -57,9 +172,9 @@ class DjangoClarityBaseView:
         self.update_url_name = f"{url_name_prefix}-update"
 
         # Set a custom success_url for after updating the database
-        self.success_url = reverse_lazy(f"{self.namespace}:{self.index_url_name}")
+        # self.success_url = reverse(f"{self.namespace}:{self.index_url_name}")
 
-        # TODO: do I need to do this? DjangoClarityBaseView doesn't have a superclass
+        # TODO: do I need to do this? DjangoClarityModelBaseView doesn't have a superclass
         super().__init__(*args, **kwargs)
 
     def get_form_errors(self, form):
@@ -152,7 +267,7 @@ class DjangoClarityBaseView:
         return all_errors
 
 
-class DjangoClarityCreateView(DjangoClarityBaseView, CreateView):
+class DjangoClarityModelCreateView(DjangoClarityModelBaseView, CreateView):
     """
     Base view for creating a parent model instance (form).
     """
@@ -194,7 +309,7 @@ class DjangoClarityCreateView(DjangoClarityBaseView, CreateView):
         )
 
 
-class DjangoClarityUpdateView(DjangoClarityBaseView, UpdateView):
+class DjangoClarityModelUpdateView(DjangoClarityModelBaseView, UpdateView):
     """
     Base view for updating a parent model instance (form)
     and children model instances (formsets).
@@ -278,7 +393,7 @@ class DjangoClarityUpdateView(DjangoClarityBaseView, UpdateView):
         )
 
 
-class DjangoClarityListView(DjangoClarityBaseView, ListView):
+class DjangoClarityModelListView(DjangoClarityModelBaseView, ListView):
     template_name = "djangoclarity/base_index_template.html"
     items_per_page = 10
     order_by_fields = ("id",)
@@ -556,7 +671,7 @@ class DjangoClarityListView(DjangoClarityBaseView, ListView):
         return context
 
 
-class DjangoClarityDeleteView(DjangoClarityBaseView, DeleteView):
+class DjangoClarityModelDeleteView(DjangoClarityModelBaseView, DeleteView):
     template_name = "djangoclarity/base_delete_template.html"
 
     def get_context_data(self, **kwargs):

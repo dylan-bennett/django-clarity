@@ -1,7 +1,7 @@
 {% load django_bootstrap5 %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Django Clarity{% endblock %}</title>
@@ -11,9 +11,9 @@
     {% bootstrap_javascript %}
 
     {% block extrahead %}{% endblock %}
-</head>
-<body>
+  </head>
+  <body>
     {% block content %}{% endblock %}
     {% block scripts %}{% endblock %}
-</body>
+  </body>
 </html>
