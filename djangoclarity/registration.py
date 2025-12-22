@@ -86,10 +86,20 @@ def create_model_form_class(model, model_admin):
     #     attrs,
     # )
 
+    fields = model_admin.fields
+    if fields == "__all__":
+        fields = tuple(field.name for field in model._meta.fields if field.editable)
+    # fields = (
+    #     model._meta.fields if model_admin.fields == "__all__" else model_admin.fields
+    # )
+
     FormClass = modelform_factory(
         model,
         ModelForm,
-        fields=model_admin.fields,
+        fields=tuple(
+            field for field in fields if field not in model_admin.readonly_fields
+        ),
+        # fields=fields,
         widgets=model_admin.widgets,
     )
 
@@ -151,12 +161,12 @@ class AdminSite:
                 app_label_models_dict[model._meta.app_label] = []
             app_label_models_dict[model._meta.app_label].append(model)
 
+            form = create_model_form_class(model, model_admin)
             formsets = create_inline_formsets(model, model_admin.inlines)
             create_view_class = model_admin.create_view_class
             delete_view_class = model_admin.delete_view_class
             index_view_class = model_admin.index_view_class
             update_view_class = model_admin.update_view_class
-            form = create_model_form_class(model, model_admin)
             url_prefix = f"{model._meta.app_label}/{model._meta.model_name}"
 
             url_name_prefix = (
