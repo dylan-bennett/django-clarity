@@ -15,6 +15,7 @@ from .views import (
 
 def create_inline_formsets(model, inlines):
     formsets = []
+    formset_layouts = []
     for inline in inlines:
         # Meta = type(
         #     "Meta",
@@ -33,12 +34,41 @@ def create_inline_formsets(model, inlines):
         #     attrs,
         # )
 
-        formset_form_class = modelform_factory(
-            inline.model,
-            ModelForm,
-            fields=inline.fields,
-            widgets=inline.widgets,
-        )
+        # All fields
+        if inline.fields == "__all__":
+            # Show only the editable fields
+            # TODO: currently this shows the ID field, which we should maybe not show?
+            formset_layout = tuple(
+                field.name for field in inline.model._meta.fields if field.editable
+            )
+
+            # Send the string "__all__" to the model form factory
+            formset_form_class = modelform_factory(
+                inline.model,
+                ModelForm,
+                fields=inline.fields,
+                widgets=inline.widgets,
+            )
+
+        # Select subset of fields (both editable and readonly)
+        else:
+            # Show both editable and readonly fields, but mark which ones are readonly
+            # TODO probably use a dataclass to mark the readonly fields
+            formset_layout = tuple(field for field in inline.fields)
+
+            # Send only the editable fields in to the model form factory
+            # TODO: put this in a try..except to properly show the error if a readonly field is not in readonly_fields
+            formset_form_class = modelform_factory(
+                inline.model,
+                ModelForm,
+                # fields=inline.fields,
+                fields=tuple(
+                    field
+                    for field in inline.fields
+                    if field not in inline.readonly_fields
+                ),
+                widgets=inline.widgets,
+            )
 
         formsets.append(
             inlineformset_factory(
@@ -48,8 +78,9 @@ def create_inline_formsets(model, inlines):
                 extra=inline.extra,
             )
         )
+        formset_layouts.append(formset_layout)
 
-    return formsets
+    return formsets, formset_layouts
 
 
 def create_model_form_class(model, model_admin):
@@ -86,22 +117,58 @@ def create_model_form_class(model, model_admin):
     #     attrs,
     # )
 
-    fields = model_admin.fields
-    if fields == "__all__":
-        fields = tuple(field.name for field in model._meta.fields if field.editable)
-    # fields = (
-    #     model._meta.fields if model_admin.fields == "__all__" else model_admin.fields
-    # )
+    # All fields
+    if model_admin.fields == "__all__":
+        # Show only the editable fields
+        # TODO: currently this shows the ID field, which we should maybe not show?
+        form_layout = tuple(
+            field.name for field in model._meta.fields if field.editable
+        )
 
-    FormClass = modelform_factory(
-        model,
-        ModelForm,
-        fields=tuple(
-            field for field in fields if field not in model_admin.readonly_fields
-        ),
-        # fields=fields,
-        widgets=model_admin.widgets,
-    )
+        # Send the string "__all__" to the model form factory
+        FormClass = modelform_factory(
+            model,
+            ModelForm,
+            fields=model_admin.fields,
+            widgets=model_admin.widgets,
+        )
+
+    # Select subset of fields (both editable and readonly)
+    else:
+        # Show both editable and readonly fields, but mark which ones are readonly
+        # TODO probably use a dataclass to mark the readonly fields
+        form_layout = tuple(field for field in model_admin.fields)
+
+        # Send only the editable fields in to the model form factory
+        # TODO: put this in a try..except to properly show the error if a readonly field is not in readonly_fields
+        FormClass = modelform_factory(
+            model,
+            ModelForm,
+            fields=tuple(
+                field
+                for field in model_admin.fields
+                if field not in model_admin.readonly_fields
+            ),
+            widgets=model_admin.widgets,
+        )
+
+    # fields = model_admin.fields
+    # if fields != "__all__":
+    #     # fields = tuple(field.name for field in model._meta.fields if field.editable)
+    #     fields = tuple(
+    #         field for field in fields if field not in model_admin.readonly_fields
+    #     )
+    # # fields = (
+    # #     model._meta.fields if model_admin.fields == "__all__" else model_admin.fields
+    # # )
+
+    # FormClass = modelform_factory(
+    #     model,
+    #     ModelForm,
+    #     fields=fields,
+    #     # fields=fields,
+    #     widgets=model_admin.widgets,
+    # )
 
     # # Extend the class to add in the __init__ function for any readonly fields
     # class FormClass(FormClass):
@@ -117,8 +184,9 @@ def create_model_form_class(model, model_admin):
     # for readonly_field in model_admin.readonly_fields:
     #     setattr(form_class, readonly_field, )
 
-    # TODO: denote which fields in "layout" are readonly -- dataclass?
-    return {"form_class": FormClass, "layout": fields}
+    # TODO: denote which fields in "form_layout" are readonly -- dataclass?
+    # return {"form_class": FormClass, "form_layout": form_layout}
+    return FormClass, form_layout
 
 
 class ModelAdmin:
@@ -162,8 +230,10 @@ class AdminSite:
                 app_label_models_dict[model._meta.app_label] = []
             app_label_models_dict[model._meta.app_label].append(model)
 
-            form_and_layout = create_model_form_class(model, model_admin)
-            formsets = create_inline_formsets(model, model_admin.inlines)
+            form_class, form_layout = create_model_form_class(model, model_admin)
+            formsets, formset_layouts = create_inline_formsets(
+                model, model_admin.inlines
+            )
             create_view_class = model_admin.create_view_class
             delete_view_class = model_admin.delete_view_class
             index_view_class = model_admin.index_view_class
@@ -179,41 +249,49 @@ class AdminSite:
                 path(
                     f"{url_prefix}/add/",
                     create_view_class.as_view(
-                        form_class_and_layout=form_and_layout,
+                        form_class=form_class,
+                        form_layout=form_layout,
                         formsets=formsets,
+                        formset_layouts=formset_layouts,
                         namespace=self._namespace,
                     ),
-                    # name=form.Meta.url_names["create_url_name"],
+                    # name=form_class.Meta.url_names["create_url_name"],
                     name=f"{url_name_prefix}-create",
                 ),
                 path(
                     f"{url_prefix}/<int:pk>/delete/",
                     delete_view_class.as_view(
-                        form_class_and_layout=form_and_layout,
+                        form_class=form_class,
+                        form_layout=form_layout,
                         formsets=formsets,
+                        formset_layouts=formset_layouts,
                         namespace=self._namespace,
                     ),
-                    # name=form.Meta.url_names["delete_url_name"],
+                    # name=form_class.Meta.url_names["delete_url_name"],
                     name=f"{url_name_prefix}-delete",
                 ),
                 path(
                     f"{url_prefix}/",
                     index_view_class.as_view(
-                        form_class_and_layout=form_and_layout,
+                        form_class=form_class,
+                        form_layout=form_layout,
                         formsets=formsets,
+                        formset_layouts=formset_layouts,
                         namespace=self._namespace,
                     ),
-                    # name=form.Meta.url_names["index_url_name"],
+                    # name=form_class.Meta.url_names["index_url_name"],
                     name=f"{url_name_prefix}-index",
                 ),
                 path(
                     f"{url_prefix}/<int:pk>/change/",
                     update_view_class.as_view(
-                        form_class_and_layout=form_and_layout,
+                        form_class=form_class,
+                        form_layout=form_layout,
                         formsets=formsets,
+                        formset_layouts=formset_layouts,
                         namespace=self._namespace,
                     ),
-                    # name=form.Meta.url_names["update_url_name"],
+                    # name=form_class.Meta.url_names["update_url_name"],
                     name=f"{url_name_prefix}-update",
                 ),
                 # Redirect paths

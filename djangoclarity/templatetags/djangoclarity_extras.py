@@ -22,14 +22,27 @@ def djangoclarity_render_field(field):
 
 # Inclusion tag for rendering a form
 @register.inclusion_tag("djangoclarity/includes/render_form.html")
-def djangoclarity_render_form(form, is_formset_form=False):
+def djangoclarity_render_form(
+    form, form_layouts, form_layout_counter, is_formset_form=False
+):
+    print("djangoclarity_render_form")
+    print("form", form)
+    print("form_layouts", form_layouts)
+    print("form_layout_counter", form_layout_counter)
+    print("is_formset_form", is_formset_form)
+    print("--------")
+
+    form_layout = form_layouts[form_layout_counter]
+
+    # print(form_layout)
+
     # Filter the visible fields (exclude the DELETE if it's a formset form)
     visible_fields = []
     for field in form.visible_fields():
         if not is_formset_form or (is_formset_form and field.name != "DELETE"):
             visible_fields.append(field)
 
-    # Calculate the cold_md_width for each field
+    # Calculate the col_md_width for each field
     field_list = []
     visible_count = len(visible_fields)
 
@@ -61,9 +74,20 @@ def djangoclarity_render_form(form, is_formset_form=False):
 
 # Inclusion tag for rendering a formset form
 @register.inclusion_tag("djangoclarity/includes/render_formset_form.html")
-def djangoclarity_render_formset_form(formset_form, new_form=False):
+def djangoclarity_render_formset_form(
+    formset_form, formset_layouts, layout_counter, new_form=False
+):
+    print("djangoclarity_render_formset_form")
+    print("formset_form", formset_form)
+    print("formset_layouts", formset_layouts)
+    print("layout_counter", layout_counter)
+    print("new_form", new_form)
+    print("--------")
+
     return {
         "formset_form": formset_form,
+        "formset_layouts": formset_layouts,
+        "layout_counter": layout_counter,
         "new_form": new_form,
         "model_verbose_name": (
             formset_form._meta.model._meta.verbose_name
@@ -75,7 +99,7 @@ def djangoclarity_render_formset_form(formset_form, new_form=False):
 
 # Inclusion tag for rendering a formset
 @register.inclusion_tag("djangoclarity/includes/render_formset.html")
-def djangoclarity_render_formset(formset):
+def djangoclarity_render_formset(formset, formset_layouts, formset_layout_counter):
     formset_forms = []
     for idx, formset_form in enumerate(formset):
         formset_forms.append(
@@ -92,6 +116,8 @@ def djangoclarity_render_formset(formset):
     return {
         "formset": formset,
         "formset_forms": formset_forms,
+        "formset_layouts": formset_layouts,
+        "formset_layout_counter": formset_layout_counter,
         "model_verbose_name": (
             formset.model._meta.verbose_name if hasattr(formset, "model") else ""
         ),

@@ -16,7 +16,8 @@
   {% endif %}
 
   {# Render the form, noting that it's within a formset #}
-  {% djangoclarity_render_form formset_form True %}
+  {# NOTE: this will likely crash once tested, because we need to keep track of the layout_counter for an inline formset's layout (I think?) but we just haven't gotten there yet #}
+  {% djangoclarity_render_form formset_form formset_layouts forloop.counter0 True %}
 
   {# Visual separator #}
   <hr />

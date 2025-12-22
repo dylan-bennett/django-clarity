@@ -35,7 +35,7 @@
     <h2>{{ model_verbose_name|title }}</h2>
 
     <!-- Render the form -->
-    {% djangoclarity_render_form form %}
+    {% djangoclarity_render_form form form_layouts 0 %}
 
     <!-- If we're creating then let the user know of any upcoming child models in the update page -->
     {% if formset_model_names|length > 0 %}

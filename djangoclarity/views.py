@@ -130,23 +130,37 @@ class DjangoClarityModelBaseView:
 
     # Attributes to be sent into the .as_view() method
     slug = None
-    form_class_and_layout = None
+    # form_class_and_layout = None
+    form_class = None
+    form_layout = None
     formsets = []
+    formset_layouts = []
     namespace = None
 
     def __init__(self, *args, **kwargs):
         # Extract the required data from .as_view()'s kwargs
         # Form
         try:
-            self.form_class_and_layout = kwargs.pop("form_class_and_layout")
+            self.form_class = kwargs.pop("form_class")
         except KeyError:
             raise TypeError(
-                "%s() missing required keyword argument: 'form_class_and_layout'"
+                "%s() missing required keyword argument: 'form_class'"
+                % (self.__class__.__name__,)
+            )
+        # self.form_class = self.form_class_and_layout["form_class"]
+
+        # Form Layout
+        try:
+            self.form_layout = kwargs.pop("form_layout")
+        except KeyError:
+            raise TypeError(
+                "%s() missing required keyword argument: 'form_layout'"
                 % (self.__class__.__name__,)
             )
 
         # Formsets
         self.formsets = kwargs.pop("formsets", [])
+        self.formset_layouts = kwargs.pop("formset_layouts", [])
 
         # Namespace
         try:
@@ -158,7 +172,7 @@ class DjangoClarityModelBaseView:
             )
 
         # Create the remaining needed data
-        self.model = self.form_class_and_layout["form_class"].Meta.model
+        self.model = self.form_class.Meta.model
         url_name_prefix = (
             f"djangoclarity-{self.model._meta.app_label}-{self.model._meta.model_name}"
         )
@@ -282,6 +296,9 @@ class DjangoClarityModelCreateView(DjangoClarityModelBaseView, CreateView):
         """
         context = super().get_context_data(**kwargs)
 
+        # Form layout
+        context["form_layouts"] = [self.form_layout]
+
         # Collect all errors to display at the top
         all_errors = []
         all_errors.extend(self.get_form_errors(context.get("form")))
@@ -336,6 +353,12 @@ class DjangoClarityModelUpdateView(DjangoClarityModelBaseView, UpdateView):
             )
             for formset in self.formsets
         ]
+
+        # Layouts for the formsets
+        context["formset_layouts"] = self.formset_layouts
+
+        # Form layout
+        context["form_layouts"] = [self.form_layout]
 
         # Collect all errors to display at the top
         all_errors = []
@@ -465,8 +488,7 @@ class DjangoClarityModelListView(DjangoClarityModelBaseView, ListView):
         This also does not include the Update/Delete links.
         """
         field_names = []
-        # form_class = self.form_class_and_layout["form_class"]
-        layout = self.form_class_and_layout["layout"]
+        layout = self.form_layout
         # for field_name, field in layout:
         for field_name in layout:
             field_names.append(field_name)

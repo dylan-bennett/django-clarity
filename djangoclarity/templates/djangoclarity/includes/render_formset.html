@@ -22,7 +22,7 @@
       {% for formset_form in formset_forms %}
         <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="formset-pane-{{ forloop.counter }}" role="tabpanel" aria-labelledby="formset-tab-{{ forloop.counter }}">
           <div class="p-3">
-            {% djangoclarity_render_formset_form formset_form.form formset_form.is_new %}
+            {% djangoclarity_render_formset_form formset_form.form formset_layouts formset_layout_counter formset_form.is_new %}
           </div>
         </div>
       {% endfor %}
