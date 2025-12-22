@@ -130,7 +130,7 @@ class DjangoClarityModelBaseView:
 
     # Attributes to be sent into the .as_view() method
     slug = None
-    form_class = None
+    form_class_and_layout = None
     formsets = []
     namespace = None
 
@@ -138,10 +138,10 @@ class DjangoClarityModelBaseView:
         # Extract the required data from .as_view()'s kwargs
         # Form
         try:
-            self.form_class = kwargs.pop("form_class")
+            self.form_class_and_layout = kwargs.pop("form_class_and_layout")
         except KeyError:
             raise TypeError(
-                "%s() missing required keyword argument: 'form_class'"
+                "%s() missing required keyword argument: 'form_class_and_layout'"
                 % (self.__class__.__name__,)
             )
 
@@ -158,7 +158,7 @@ class DjangoClarityModelBaseView:
             )
 
         # Create the remaining needed data
-        self.model = self.form_class.Meta.model
+        self.model = self.form_class_and_layout["form_class"].Meta.model
         url_name_prefix = (
             f"djangoclarity-{self.model._meta.app_label}-{self.model._meta.model_name}"
         )
@@ -465,7 +465,10 @@ class DjangoClarityModelListView(DjangoClarityModelBaseView, ListView):
         This also does not include the Update/Delete links.
         """
         field_names = []
-        for field_name, field in self.form_class().fields.items():
+        # form_class = self.form_class_and_layout["form_class"]
+        layout = self.form_class_and_layout["layout"]
+        # for field_name, field in layout:
+        for field_name in layout:
             field_names.append(field_name)
 
         return field_names
@@ -474,67 +477,67 @@ class DjangoClarityModelListView(DjangoClarityModelBaseView, ListView):
         """Base method to return a dictionary of extra items, meant to be overridden."""
         return {}
 
-    def get_items(self):
-        """Return the list of instance objects, ready for JSON serialization."""
-        items = []
+    # def get_items(self):
+    #     """Return the list of instance objects, ready for JSON serialization."""
+    #     items = []
 
-        # Get pagination data
-        page, total_items = self._get_pagination_data()
+    #     # Get pagination data
+    #     page, total_items = self._get_pagination_data()
 
-        # Get the paginated queryset
-        paginated_queryset = self._get_paginated_queryset(page, total_items)
+    #     # Get the paginated queryset
+    #     paginated_queryset = self._get_paginated_queryset(page, total_items)
 
-        for obj in paginated_queryset:
-            d = model_to_dict(obj, self._get_field_names())
+    #     for obj in paginated_queryset:
+    #         d = model_to_dict(obj, self._get_field_names())
 
-            # Add in any extra items
-            d.update(self._get_extra_items(obj))
+    #         # Add in any extra items
+    #         d.update(self._get_extra_items(obj))
 
-            # Add in final columns of the Update & Delete URLs
-            d[self.update_url_name] = (
-                reverse(
-                    f"{self.namespace}:{self.update_url_name}", kwargs={"pk": obj.pk}
-                ),
-            )
-            d[self.delete_url_name] = (
-                reverse(
-                    f"{self.namespace}:{self.delete_url_name}", kwargs={"pk": obj.pk}
-                ),
-            )
+    #         # Add in final columns of the Update & Delete URLs
+    #         d[self.update_url_name] = (
+    #             reverse(
+    #                 f"{self.namespace}:{self.update_url_name}", kwargs={"pk": obj.pk}
+    #             ),
+    #         )
+    #         d[self.delete_url_name] = (
+    #             reverse(
+    #                 f"{self.namespace}:{self.delete_url_name}", kwargs={"pk": obj.pk}
+    #             ),
+    #         )
 
-            # Add the row of information to the list of items. Use the `get_{attr_name}_display()` method if it exists.
-            items.append(
-                {
-                    key: (
-                        getattr(obj, f"get_{key}_display")()
-                        if hasattr(obj, f"get_{key}_display")
-                        else value
-                    )
-                    for key, value in d.items()
-                }
-            )
+    #         # Add the row of information to the list of items. Use the `get_{attr_name}_display()` method if it exists.
+    #         items.append(
+    #             {
+    #                 key: (
+    #                     getattr(obj, f"get_{key}_display")()
+    #                     if hasattr(obj, f"get_{key}_display")
+    #                     else value
+    #                 )
+    #                 for key, value in d.items()
+    #             }
+    #         )
 
-        return items
+    #     return items
 
     def _get_extra_fields(self):
         """Base method to return a list of extra fields, meant to be overridden."""
         return []
 
-    def get_fields(self):
-        """Return the list of field headers for the index table."""
-        fields = [
-            {"key": field_name, "sortable": True}
-            for field_name in self._get_field_names()
-        ]
+    # def get_fields(self):
+    #     """Return the list of field headers for the index table."""
+    #     fields = [
+    #         {"key": field_name, "sortable": True}
+    #         for field_name in self._get_field_names()
+    #     ]
 
-        # Add in any extra fields
-        fields.extend(self._get_extra_fields())
+    #     # Add in any extra fields
+    #     fields.extend(self._get_extra_fields())
 
-        # Add in final columns for the Update & Delete URLs
-        fields.append({"key": self.update_url_name, "label": "Update"})
-        fields.append({"key": self.delete_url_name, "label": "Delete"})
+    #     # Add in final columns for the Update & Delete URLs
+    #     fields.append({"key": self.update_url_name, "label": "Update"})
+    #     fields.append({"key": self.delete_url_name, "label": "Delete"})
 
-        return fields
+    #     return fields
 
     def get_headers(self):
         """Return the list of field headers for the index table."""

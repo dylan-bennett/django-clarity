@@ -117,7 +117,8 @@ def create_model_form_class(model, model_admin):
     # for readonly_field in model_admin.readonly_fields:
     #     setattr(form_class, readonly_field, )
 
-    return FormClass
+    # TODO: denote which fields in "layout" are readonly -- dataclass?
+    return {"form_class": FormClass, "layout": fields}
 
 
 class ModelAdmin:
@@ -161,7 +162,7 @@ class AdminSite:
                 app_label_models_dict[model._meta.app_label] = []
             app_label_models_dict[model._meta.app_label].append(model)
 
-            form = create_model_form_class(model, model_admin)
+            form_and_layout = create_model_form_class(model, model_admin)
             formsets = create_inline_formsets(model, model_admin.inlines)
             create_view_class = model_admin.create_view_class
             delete_view_class = model_admin.delete_view_class
@@ -178,7 +179,9 @@ class AdminSite:
                 path(
                     f"{url_prefix}/add/",
                     create_view_class.as_view(
-                        form_class=form, formsets=formsets, namespace=self._namespace
+                        form_class_and_layout=form_and_layout,
+                        formsets=formsets,
+                        namespace=self._namespace,
                     ),
                     # name=form.Meta.url_names["create_url_name"],
                     name=f"{url_name_prefix}-create",
@@ -186,7 +189,9 @@ class AdminSite:
                 path(
                     f"{url_prefix}/<int:pk>/delete/",
                     delete_view_class.as_view(
-                        form_class=form, formsets=formsets, namespace=self._namespace
+                        form_class_and_layout=form_and_layout,
+                        formsets=formsets,
+                        namespace=self._namespace,
                     ),
                     # name=form.Meta.url_names["delete_url_name"],
                     name=f"{url_name_prefix}-delete",
@@ -194,7 +199,9 @@ class AdminSite:
                 path(
                     f"{url_prefix}/",
                     index_view_class.as_view(
-                        form_class=form, formsets=formsets, namespace=self._namespace
+                        form_class_and_layout=form_and_layout,
+                        formsets=formsets,
+                        namespace=self._namespace,
                     ),
                     # name=form.Meta.url_names["index_url_name"],
                     name=f"{url_name_prefix}-index",
@@ -202,7 +209,9 @@ class AdminSite:
                 path(
                     f"{url_prefix}/<int:pk>/change/",
                     update_view_class.as_view(
-                        form_class=form, formsets=formsets, namespace=self._namespace
+                        form_class_and_layout=form_and_layout,
+                        formsets=formsets,
+                        namespace=self._namespace,
                     ),
                     # name=form.Meta.url_names["update_url_name"],
                     name=f"{url_name_prefix}-update",
