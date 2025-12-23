@@ -18,27 +18,9 @@ def create_inline_formsets(model, inlines):
     formsets = []
     formset_layouts = []
     for inline in inlines:
-        # Meta = type(
-        #     "Meta",
-        #     (),
-        #     {
-        #         "model": inline.model,
-        #         "fields": inline.fields,
-        #         "widgets": inline.widgets,
-        #     },
-        # )
-        # attrs = {"Meta": Meta}
-
-        # formset_form_class = type(
-        #     f"DjangoClarity{model._meta.model_name}{inline.model._meta.model_name}InlineModelForm",
-        #     (ModelForm,),
-        #     attrs,
-        # )
-
         # All fields
         if inline.fields == "__all__":
             # Show only the editable fields, except for the FK relationship to the model
-            # TODO: currently this shows the ID field, which we should maybe not show?
             formset_layout = tuple(
                 field.name
                 for field in inline.model._meta.fields
@@ -57,7 +39,8 @@ def create_inline_formsets(model, inlines):
 
         # Select subset of fields (both editable and readonly)
         else:
-            # Show both editable and readonly fields, except for the FK relationship to the model, but mark which ones are readonly
+            # Show both editable and readonly fields, except for the FK relationship
+            # to the model, but mark which ones are readonly
             formset_layout = tuple(
                 (
                     ReadOnlyField(name=field, label_tag=field, value=None)
@@ -74,7 +57,6 @@ def create_inline_formsets(model, inlines):
             formset_form_class = modelform_factory(
                 inline.model,
                 ModelForm,
-                # fields=inline.fields,
                 fields=tuple(
                     field
                     for field in inline.fields
@@ -98,37 +80,6 @@ def create_inline_formsets(model, inlines):
 
 def create_model_form_class(model, model_admin):
     # url_name_prefix = f"djangoclarity-{model._meta.app_label}-{model._meta.model_name}"
-
-    # # Create the Meta class dynamically
-    # Meta = type(
-    #     "Meta",
-    #     (),
-    #     {
-    #         "model": model,
-    #         # "fields": tuple(
-    #         #     field
-    #         #     for field in model_admin.fields
-    #         #     if field not in model_admin.readonly_fields
-    #         # ),
-    #         "fields": model_admin.fields,
-    #         "widgets": model_admin.widgets,
-    #         # "readonly_fields": model_admin.readonly_fields,
-    #         "url_names": {
-    #             "create_url_name": f"{url_name_prefix}-create",
-    #             "delete_url_name": f"{url_name_prefix}-delete",
-    #             "index_url_name": f"{url_name_prefix}-index",
-    #             "update_url_name": f"{url_name_prefix}-update",
-    #         },
-    #     },
-    # )
-
-    # Create the new ModelForm class
-    # attrs = {"Meta": Meta}
-    # FormClass = type(
-    #     f"DjangoClarity{model._meta.app_label}{model._meta.model_name}ModelForm",
-    #     (ModelForm,),
-    #     attrs,
-    # )
 
     # All fields
     if model_admin.fields == "__all__":
@@ -158,7 +109,7 @@ def create_model_form_class(model, model_admin):
                 else field
             )
             for field in model_admin.fields
-            # if field != "id"
+            if field != "id"
         )
 
         # Send only the editable fields in to the model form factory
@@ -174,40 +125,6 @@ def create_model_form_class(model, model_admin):
             widgets=model_admin.widgets,
         )
 
-    # fields = model_admin.fields
-    # if fields != "__all__":
-    #     # fields = tuple(field.name for field in model._meta.fields if field.editable)
-    #     fields = tuple(
-    #         field for field in fields if field not in model_admin.readonly_fields
-    #     )
-    # # fields = (
-    # #     model._meta.fields if model_admin.fields == "__all__" else model_admin.fields
-    # # )
-
-    # FormClass = modelform_factory(
-    #     model,
-    #     ModelForm,
-    #     fields=fields,
-    #     # fields=fields,
-    #     widgets=model_admin.widgets,
-    # )
-
-    # # Extend the class to add in the __init__ function for any readonly fields
-    # class FormClass(FormClass):
-    #     def __init__(self, *args, **kwargs):
-    #         super().__init__(*args, **kwargs)
-    #         if self.instance:
-    #             for readonly_field in model_admin.readonly_fields:
-    #                 self.fields[readonly_field].disabled = True
-    #                 self.fields[readonly_field].initial = getattr(
-    #                     self.instance, readonly_field
-    #                 )
-
-    # for readonly_field in model_admin.readonly_fields:
-    #     setattr(form_class, readonly_field, )
-
-    # TODO: denote which fields in "form_layout" are readonly -- dataclass?
-    # return {"form_class": FormClass, "form_layout": form_layout}
     return FormClass, form_layout
 
 

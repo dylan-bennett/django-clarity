@@ -10,6 +10,8 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 from django.views.generic.base import TemplateView
 
+from .dataclasses import ReadOnlyField
+
 
 class DjangoClarityIndexView(TemplateView):
     base_template = "djangoclarity/base.html"
@@ -130,7 +132,6 @@ class DjangoClarityModelBaseView:
 
     # Attributes to be sent into the .as_view() method
     slug = None
-    # form_class_and_layout = None
     form_class = None
     form_layout = None
     formsets = []
@@ -147,7 +148,6 @@ class DjangoClarityModelBaseView:
                 "%s() missing required keyword argument: 'form_class'"
                 % (self.__class__.__name__,)
             )
-        # self.form_class = self.form_class_and_layout["form_class"]
 
         # Form Layout
         try:
@@ -186,7 +186,7 @@ class DjangoClarityModelBaseView:
         self.update_url_name = f"{url_name_prefix}-update"
 
         # Set a custom success_url for after updating the database
-        # self.success_url = reverse(f"{self.namespace}:{self.index_url_name}")
+        self.success_url = reverse(f"{self.namespace}:{self.index_url_name}")
 
         # TODO: do I need to do this? DjangoClarityModelBaseView doesn't have a superclass
         super().__init__(*args, **kwargs)
@@ -344,7 +344,8 @@ class DjangoClarityModelUpdateView(DjangoClarityModelBaseView, UpdateView):
 
         # If this is a POST request, put the POST and FILES data
         # into the child model's formset. The FILES data is for any images.
-        # Otherwise, initialize an empty formset (or with existing instance data if updating).
+        # Otherwise, initialize an empty formset
+        # (or with existing instance data if updating).
         context["formsets"] = [
             formset(
                 data=self.request.POST if self.request.POST else None,
@@ -489,9 +490,10 @@ class DjangoClarityModelListView(DjangoClarityModelBaseView, ListView):
         """
         field_names = []
         layout = self.form_layout
-        # for field_name, field in layout:
         for field_name in layout:
-            field_names.append(field_name)
+            field_names.append(
+                field_name.name if type(field_name) is ReadOnlyField else field_name
+            )
 
         return field_names
 
@@ -613,7 +615,8 @@ class DjangoClarityModelListView(DjangoClarityModelBaseView, ListView):
                 f"{self.namespace}:{self.delete_url_name}", kwargs={"pk": obj.pk}
             )
 
-            # Add the row of information to the list of items. Use the `get_{attr_name}_display()` method if it exists.
+            # Add the row of information to the list of items.
+            # Use the `get_{attr_name}_display()` method if it exists.
             items.append(
                 {
                     key: (
