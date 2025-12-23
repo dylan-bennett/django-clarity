@@ -22,6 +22,12 @@ def djangoclarity_render_field(field):
     return {"field": field, "widget_attrs": widget_attrs}
 
 
+# Inclusion tag for rendering a single readonly form field
+@register.inclusion_tag("djangoclarity/includes/render_readonly_field.html")
+def djangoclarity_render_readonly_field(field):
+    return {"field": field}
+
+
 # Inclusion tag for rendering a form
 @register.inclusion_tag("djangoclarity/includes/render_form.html")
 def djangoclarity_render_form(
@@ -30,11 +36,14 @@ def djangoclarity_render_form(
     form_layout = form_layouts[form_layout_counter]
 
     print(form_layout)
+    print(form.fields)
+    print(form.visible_fields())
     print([field.name for field in form.visible_fields()])
     print([field.name for field in form.hidden_fields()])
 
     # Make a dictionary for faster lookup of the visible fields
     visible_fields_dict = {field.name: field for field in form.visible_fields()}
+    # form_visible_fields = form.visible_fields()
 
     # Get the desired fields
     # Form
@@ -42,17 +51,14 @@ def djangoclarity_render_form(
         visible_fields = []
         for field_name in form_layout:
             # if visible_fields_dict.get(field_name):
+            f_name = (
+                field_name.field if type(field_name) is ReadOnlyField else field_name
+            )
             visible_fields.append(
-                (
-                    visible_fields_dict[
-                        (
-                            field_name.field
-                            if field_name.__class__ == ReadOnlyField
-                            else field_name
-                        )
-                    ],
-                    field_name.__class__ == ReadOnlyField,
-                )
+                # (
+                visible_fields_dict.get(f_name, field_name),
+                #     type(field_name) is ReadOnlyField,
+                # )
             )
 
     # Formset
@@ -60,11 +66,14 @@ def djangoclarity_render_form(
         visible_fields = []
         for field_name in form_layout:
             # if visible_fields_dict.get(field_name):
+            f_name = (
+                field_name.field if type(field_name) is ReadOnlyField else field_name
+            )
             visible_fields.append(
-                (
-                    visible_fields_dict[field_name],
-                    field_name.__class__ == ReadOnlyField,
-                )
+                # (
+                visible_fields_dict.get(f_name, field_name),
+                #     type(field_name) is ReadOnlyField,
+                # )
             )
 
     # Filter the visible fields (exclude the DELETE if it's a formset form)
@@ -79,11 +88,13 @@ def djangoclarity_render_form(
     field_list = []
     visible_count = len(visible_fields)
 
-    for idx, field_readonly in enumerate(visible_fields):
-        field, readonly = field_readonly
+    for idx, field in enumerate(visible_fields):
+        readonly = type(field) is ReadOnlyField
 
         # Use the custom setting, if provided
-        col_md_width = field.field.widget.attrs.get("col_md_width")
+        col_md_width = None
+        if not readonly:
+            col_md_width = field.field.widget.attrs.get("col_md_width")
 
         # Otherwise, figure it out
         if col_md_width is None:

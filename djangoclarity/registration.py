@@ -43,8 +43,8 @@ def create_inline_formsets(model, inlines):
                 field.name
                 for field in inline.model._meta.fields
                 if field.editable
-                and field.related_model != model
-                and field.name != "id"
+                and getattr(field, "related_model", None) != model
+                and getattr(field, "name", None) != "id"
             )
 
             # Send the string "__all__" to the model form factory
@@ -59,9 +59,14 @@ def create_inline_formsets(model, inlines):
         else:
             # Show both editable and readonly fields, except for the FK relationship to the model, but mark which ones are readonly
             formset_layout = tuple(
-                ReadOnlyField(field) if field in inline.readonly_fields else field
+                (
+                    ReadOnlyField(field, field)
+                    if field in inline.readonly_fields
+                    else field
+                )
                 for field in inline.fields
-                if field.related_model != model and field.name != "id"
+                if getattr(field, "related_model", None) != model
+                and getattr(field, "name", None) != "id"
             )
 
             # Send only the editable fields in to the model form factory
@@ -147,7 +152,11 @@ def create_model_form_class(model, model_admin):
     else:
         # Show both editable and readonly fields, but mark which ones are readonly
         form_layout = tuple(
-            ReadOnlyField(field) if field in model_admin.readonly_fields else field
+            (
+                ReadOnlyField(field, field)
+                if field in model_admin.readonly_fields
+                else field
+            )
             for field in model_admin.fields
             # if field != "id"
         )
