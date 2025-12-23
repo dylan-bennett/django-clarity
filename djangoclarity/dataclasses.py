@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True)
+@dataclass
 class ReadOnlyField:
-    field: str
+    name: str
     label_tag: str
+    value: str | None

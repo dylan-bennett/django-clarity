@@ -35,6 +35,8 @@ def djangoclarity_render_form(
 ):
     form_layout = form_layouts[form_layout_counter]
 
+    # print(form)
+
     print(form_layout)
     print(form.fields)
     print(form.visible_fields())
@@ -47,34 +49,42 @@ def djangoclarity_render_form(
 
     # Get the desired fields
     # Form
-    if not is_formset_form:
-        visible_fields = []
-        for field_name in form_layout:
-            # if visible_fields_dict.get(field_name):
-            f_name = (
-                field_name.field if type(field_name) is ReadOnlyField else field_name
-            )
-            visible_fields.append(
-                # (
-                visible_fields_dict.get(f_name, field_name),
-                #     type(field_name) is ReadOnlyField,
-                # )
-            )
+    # if not is_formset_form:
+    visible_fields = []
+    for layout_field_name in form_layout:
+        # Get the key for the visible fields dictionary (the string of the field name)
+        # key = (
+        #     layout_field_name.name
+        #     if type(layout_field_name) is ReadOnlyField
+        #     else layout_field_name
+        # )
 
-    # Formset
-    else:
-        visible_fields = []
-        for field_name in form_layout:
-            # if visible_fields_dict.get(field_name):
-            f_name = (
-                field_name.field if type(field_name) is ReadOnlyField else field_name
-            )
-            visible_fields.append(
-                # (
-                visible_fields_dict.get(f_name, field_name),
-                #     type(field_name) is ReadOnlyField,
-                # )
-            )
+        # Add either the field object or the ReadOnlyField object
+        # to the list of visible fields
+        # visible_fields.append(visible_fields_dict.get(key, layout_field_name))
+
+        # If it's a readonly field, then put in our custom dataclass.
+        # Otherwise, put in the visible field object.
+        if type(layout_field_name) is ReadOnlyField:
+            layout_field_name.value = getattr(form.instance, layout_field_name.name)
+            visible_fields.append(layout_field_name)
+        else:
+            visible_fields.append(visible_fields_dict[layout_field_name])
+
+    # # Formset
+    # else:
+    #     visible_fields = []
+    #     for field_name in form_layout:
+    #         # if visible_fields_dict.get(field_name):
+    #         f_name = (
+    #             field_name.name if type(field_name) is ReadOnlyField else field_name
+    #         )
+    #         visible_fields.append(
+    #             # (
+    #             visible_fields_dict.get(f_name, field_name),
+    #             #     type(field_name) is ReadOnlyField,
+    #             # )
+    #         )
 
     # Filter the visible fields (exclude the DELETE if it's a formset form)
     # visible_fields = []
@@ -117,6 +127,7 @@ def djangoclarity_render_form(
             if hasattr(form, "_meta") and hasattr(form._meta, "model")
             else ""
         ),
+        "form": form,
     }
 
 

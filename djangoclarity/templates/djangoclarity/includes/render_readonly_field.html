@@ -2,12 +2,12 @@
 
 <div class="d-flex flex-column">
   {# Render the field's label and add a red asterisk if the field is required #}
-  <div>{{ field.label_tag }}</div>
+  <div>{{ field.label_tag|capfirst }}</div>
 
   {% comment %}
   Just display the string of the readonly field. It's not part of the form, so it has no widget to render.
   {% endcomment %}
-  <div class="readonly">{{ field.field }}</div>
+  <div class="readonly">{{ field.value }}</div>
 
   {# If the field has help text, display it below the input with proper accessibility attributes #}
   {% if field.help_text %}

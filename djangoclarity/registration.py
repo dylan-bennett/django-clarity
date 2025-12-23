@@ -60,7 +60,7 @@ def create_inline_formsets(model, inlines):
             # Show both editable and readonly fields, except for the FK relationship to the model, but mark which ones are readonly
             formset_layout = tuple(
                 (
-                    ReadOnlyField(field, field)
+                    ReadOnlyField(name=field, label_tag=field, value=None)
                     if field in inline.readonly_fields
                     else field
                 )
@@ -153,7 +153,7 @@ def create_model_form_class(model, model_admin):
         # Show both editable and readonly fields, but mark which ones are readonly
         form_layout = tuple(
             (
-                ReadOnlyField(field, field)
+                ReadOnlyField(name=field, label_tag=field, value=None)
                 if field in model_admin.readonly_fields
                 else field
             )
