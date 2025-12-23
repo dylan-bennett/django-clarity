@@ -10,6 +10,8 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 from django.views.generic.base import TemplateView
 
+from .dataclasses import ReadOnlyField
+
 
 class DjangoClarityIndexView(TemplateView):
     base_template = "djangoclarity/base.html"
@@ -131,7 +133,9 @@ class DjangoClarityModelBaseView:
     # Attributes to be sent into the .as_view() method
     slug = None
     form_class = None
+    form_layout = None
     formsets = []
+    formset_layouts = []
     namespace = None
 
     def __init__(self, *args, **kwargs):
@@ -145,8 +149,18 @@ class DjangoClarityModelBaseView:
                 % (self.__class__.__name__,)
             )
 
+        # Form Layout
+        try:
+            self.form_layout = kwargs.pop("form_layout")
+        except KeyError:
+            raise TypeError(
+                "%s() missing required keyword argument: 'form_layout'"
+                % (self.__class__.__name__,)
+            )
+
         # Formsets
         self.formsets = kwargs.pop("formsets", [])
+        self.formset_layouts = kwargs.pop("formset_layouts", [])
 
         # Namespace
         try:
@@ -172,7 +186,7 @@ class DjangoClarityModelBaseView:
         self.update_url_name = f"{url_name_prefix}-update"
 
         # Set a custom success_url for after updating the database
-        # self.success_url = reverse(f"{self.namespace}:{self.index_url_name}")
+        self.success_url = reverse(f"{self.namespace}:{self.index_url_name}")
 
         # TODO: do I need to do this? DjangoClarityModelBaseView doesn't have a superclass
         super().__init__(*args, **kwargs)
@@ -282,6 +296,9 @@ class DjangoClarityModelCreateView(DjangoClarityModelBaseView, CreateView):
         """
         context = super().get_context_data(**kwargs)
 
+        # Form layout
+        context["form_layouts"] = [self.form_layout]
+
         # Collect all errors to display at the top
         all_errors = []
         all_errors.extend(self.get_form_errors(context.get("form")))
@@ -327,7 +344,8 @@ class DjangoClarityModelUpdateView(DjangoClarityModelBaseView, UpdateView):
 
         # If this is a POST request, put the POST and FILES data
         # into the child model's formset. The FILES data is for any images.
-        # Otherwise, initialize an empty formset (or with existing instance data if updating).
+        # Otherwise, initialize an empty formset
+        # (or with existing instance data if updating).
         context["formsets"] = [
             formset(
                 data=self.request.POST if self.request.POST else None,
@@ -336,6 +354,12 @@ class DjangoClarityModelUpdateView(DjangoClarityModelBaseView, UpdateView):
             )
             for formset in self.formsets
         ]
+
+        # Layouts for the formsets
+        context["formset_layouts"] = self.formset_layouts
+
+        # Form layout
+        context["form_layouts"] = [self.form_layout]
 
         # Collect all errors to display at the top
         all_errors = []
@@ -465,8 +489,11 @@ class DjangoClarityModelListView(DjangoClarityModelBaseView, ListView):
         This also does not include the Update/Delete links.
         """
         field_names = []
-        for field_name, field in self.form_class().fields.items():
-            field_names.append(field_name)
+        layout = self.form_layout
+        for field_name in layout:
+            field_names.append(
+                field_name.name if type(field_name) is ReadOnlyField else field_name
+            )
 
         return field_names
 
@@ -474,67 +501,67 @@ class DjangoClarityModelListView(DjangoClarityModelBaseView, ListView):
         """Base method to return a dictionary of extra items, meant to be overridden."""
         return {}
 
-    def get_items(self):
-        """Return the list of instance objects, ready for JSON serialization."""
-        items = []
+    # def get_items(self):
+    #     """Return the list of instance objects, ready for JSON serialization."""
+    #     items = []
 
-        # Get pagination data
-        page, total_items = self._get_pagination_data()
+    #     # Get pagination data
+    #     page, total_items = self._get_pagination_data()
 
-        # Get the paginated queryset
-        paginated_queryset = self._get_paginated_queryset(page, total_items)
+    #     # Get the paginated queryset
+    #     paginated_queryset = self._get_paginated_queryset(page, total_items)
 
-        for obj in paginated_queryset:
-            d = model_to_dict(obj, self._get_field_names())
+    #     for obj in paginated_queryset:
+    #         d = model_to_dict(obj, self._get_field_names())
 
-            # Add in any extra items
-            d.update(self._get_extra_items(obj))
+    #         # Add in any extra items
+    #         d.update(self._get_extra_items(obj))
 
-            # Add in final columns of the Update & Delete URLs
-            d[self.update_url_name] = (
-                reverse(
-                    f"{self.namespace}:{self.update_url_name}", kwargs={"pk": obj.pk}
-                ),
-            )
-            d[self.delete_url_name] = (
-                reverse(
-                    f"{self.namespace}:{self.delete_url_name}", kwargs={"pk": obj.pk}
-                ),
-            )
+    #         # Add in final columns of the Update & Delete URLs
+    #         d[self.update_url_name] = (
+    #             reverse(
+    #                 f"{self.namespace}:{self.update_url_name}", kwargs={"pk": obj.pk}
+    #             ),
+    #         )
+    #         d[self.delete_url_name] = (
+    #             reverse(
+    #                 f"{self.namespace}:{self.delete_url_name}", kwargs={"pk": obj.pk}
+    #             ),
+    #         )
 
-            # Add the row of information to the list of items. Use the `get_{attr_name}_display()` method if it exists.
-            items.append(
-                {
-                    key: (
-                        getattr(obj, f"get_{key}_display")()
-                        if hasattr(obj, f"get_{key}_display")
-                        else value
-                    )
-                    for key, value in d.items()
-                }
-            )
+    #         # Add the row of information to the list of items. Use the `get_{attr_name}_display()` method if it exists.
+    #         items.append(
+    #             {
+    #                 key: (
+    #                     getattr(obj, f"get_{key}_display")()
+    #                     if hasattr(obj, f"get_{key}_display")
+    #                     else value
+    #                 )
+    #                 for key, value in d.items()
+    #             }
+    #         )
 
-        return items
+    #     return items
 
     def _get_extra_fields(self):
         """Base method to return a list of extra fields, meant to be overridden."""
         return []
 
-    def get_fields(self):
-        """Return the list of field headers for the index table."""
-        fields = [
-            {"key": field_name, "sortable": True}
-            for field_name in self._get_field_names()
-        ]
+    # def get_fields(self):
+    #     """Return the list of field headers for the index table."""
+    #     fields = [
+    #         {"key": field_name, "sortable": True}
+    #         for field_name in self._get_field_names()
+    #     ]
 
-        # Add in any extra fields
-        fields.extend(self._get_extra_fields())
+    #     # Add in any extra fields
+    #     fields.extend(self._get_extra_fields())
 
-        # Add in final columns for the Update & Delete URLs
-        fields.append({"key": self.update_url_name, "label": "Update"})
-        fields.append({"key": self.delete_url_name, "label": "Delete"})
+    #     # Add in final columns for the Update & Delete URLs
+    #     fields.append({"key": self.update_url_name, "label": "Update"})
+    #     fields.append({"key": self.delete_url_name, "label": "Delete"})
 
-        return fields
+    #     return fields
 
     def get_headers(self):
         """Return the list of field headers for the index table."""
@@ -588,7 +615,8 @@ class DjangoClarityModelListView(DjangoClarityModelBaseView, ListView):
                 f"{self.namespace}:{self.delete_url_name}", kwargs={"pk": obj.pk}
             )
 
-            # Add the row of information to the list of items. Use the `get_{attr_name}_display()` method if it exists.
+            # Add the row of information to the list of items.
+            # Use the `get_{attr_name}_display()` method if it exists.
             items.append(
                 {
                     key: (

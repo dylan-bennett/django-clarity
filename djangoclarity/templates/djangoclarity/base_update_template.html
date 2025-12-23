@@ -40,12 +40,12 @@
     <h2>{{ model_verbose_name|title }}</h2>
 
     <!-- Render the form -->
-    {% djangoclarity_render_form form %}
+    {% djangoclarity_render_form form form_layouts 0 %}
 
     <!-- Go through all of the formsets and render them -->
     {% block render_formsets_block %}
       {% for formset in formsets %}
-        {% djangoclarity_render_formset formset %}
+        {% djangoclarity_render_formset formset formset_layouts forloop.counter0 %}
       {% endfor %}
     {% endblock render_formsets_block %}
 

@@ -5,7 +5,11 @@
   {% for field in visible_fields %}
     <div class="col-12 col-md-{{ field.col_md_width }} mb-2">
       {# Render each field as half the row, unless it's on its own row, in which case it's the whole row #}
-      {% djangoclarity_render_field field.field %}
+      {% if field.readonly %}
+        {% djangoclarity_render_readonly_field field.field %}
+      {% else %}
+        {% djangoclarity_render_field field.field %}
+      {% endif %}
     </div>
   {% endfor %}
 </div>

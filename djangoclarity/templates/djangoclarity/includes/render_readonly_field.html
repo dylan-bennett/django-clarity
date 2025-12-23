@@ -1,0 +1,16 @@
+{% load django_bootstrap5 djangoclarity_extras %}
+
+<div class="d-flex flex-column">
+  {# Render the field's label and add a red asterisk if the field is required #}
+  <label for="id_{{ field.name }}">{{ field.label_tag|capfirst }}</label>
+
+  {% comment %}
+  Just display the string of the readonly field. It's not part of the form, so it has no widget to render.
+  {% endcomment %}
+  <div id="id_{{ field.name }}" class="text-muted">{{ field.value }}</div>
+
+  {# If the field has help text, display it below the input with proper accessibility attributes #}
+  {% if field.help_text %}
+    <small tabindex="-1" class="form-text text-muted" id="{{ field.auto_id }}_helptext">{{ field.help_text|safe }}</small>
+  {% endif %}
+</div>

@@ -13,7 +13,7 @@
 {% endif %}
 
 {# Render the form #}
-{% djangoclarity_render_form formset_form True %}
+{% djangoclarity_render_form formset_form formset_layouts layout_counter True %}
 
 {# Render an inline formset, if this formset_form has its own formset (attribute name: `inline_formset`) #}
 {% if formset_form.inline_formset %}

@@ -1,5 +1,7 @@
 from django import template
 
+from ..dataclasses import ReadOnlyField
+
 register = template.Library()
 
 
@@ -20,22 +22,45 @@ def djangoclarity_render_field(field):
     return {"field": field, "widget_attrs": widget_attrs}
 
 
+# Inclusion tag for rendering a single readonly form field
+@register.inclusion_tag("djangoclarity/includes/render_readonly_field.html")
+def djangoclarity_render_readonly_field(field):
+    return {"field": field}
+
+
 # Inclusion tag for rendering a form
 @register.inclusion_tag("djangoclarity/includes/render_form.html")
-def djangoclarity_render_form(form, is_formset_form=False):
-    # Filter the visible fields (exclude the DELETE if it's a formset form)
-    visible_fields = []
-    for field in form.visible_fields():
-        if not is_formset_form or (is_formset_form and field.name != "DELETE"):
-            visible_fields.append(field)
+def djangoclarity_render_form(
+    form, form_layouts, form_layout_counter, is_formset_form=False
+):
+    form_layout = form_layouts[form_layout_counter]
 
-    # Calculate the cold_md_width for each field
+    # Make a dictionary for faster lookup of the visible fields
+    visible_fields_dict = {field.name: field for field in form.visible_fields()}
+
+    # Get the desired fields
+    visible_fields = []
+    for layout_field_name in form_layout:
+        # If it's a readonly field, then put in our custom dataclass.
+        # Otherwise, put in the visible field object.
+        if type(layout_field_name) is ReadOnlyField:
+            # Grab the value of the field to display
+            layout_field_name.value = getattr(form.instance, layout_field_name.name)
+            visible_fields.append(layout_field_name)
+        else:
+            visible_fields.append(visible_fields_dict[layout_field_name])
+
+    # Calculate the col_md_width for each field
     field_list = []
     visible_count = len(visible_fields)
 
     for idx, field in enumerate(visible_fields):
+        readonly = type(field) is ReadOnlyField
+
         # Use the custom setting, if provided
-        col_md_width = field.field.widget.attrs.get("col_md_width")
+        col_md_width = None
+        if not readonly:
+            col_md_width = field.field.widget.attrs.get("col_md_width")
 
         # Otherwise, figure it out
         if col_md_width is None:
@@ -45,7 +70,9 @@ def djangoclarity_render_form(form, is_formset_form=False):
             else:
                 col_md_width = "6"
 
-        field_list.append({"field": field, "col_md_width": col_md_width})
+        field_list.append(
+            {"field": field, "col_md_width": col_md_width, "readonly": readonly}
+        )
 
     return {
         "visible_fields": field_list,
@@ -61,9 +88,13 @@ def djangoclarity_render_form(form, is_formset_form=False):
 
 # Inclusion tag for rendering a formset form
 @register.inclusion_tag("djangoclarity/includes/render_formset_form.html")
-def djangoclarity_render_formset_form(formset_form, new_form=False):
+def djangoclarity_render_formset_form(
+    formset_form, formset_layouts, layout_counter, new_form=False
+):
     return {
         "formset_form": formset_form,
+        "formset_layouts": formset_layouts,
+        "layout_counter": layout_counter,
         "new_form": new_form,
         "model_verbose_name": (
             formset_form._meta.model._meta.verbose_name
@@ -75,7 +106,7 @@ def djangoclarity_render_formset_form(formset_form, new_form=False):
 
 # Inclusion tag for rendering a formset
 @register.inclusion_tag("djangoclarity/includes/render_formset.html")
-def djangoclarity_render_formset(formset):
+def djangoclarity_render_formset(formset, formset_layouts, formset_layout_counter):
     formset_forms = []
     for idx, formset_form in enumerate(formset):
         formset_forms.append(
@@ -92,6 +123,8 @@ def djangoclarity_render_formset(formset):
     return {
         "formset": formset,
         "formset_forms": formset_forms,
+        "formset_layouts": formset_layouts,
+        "formset_layout_counter": formset_layout_counter,
         "model_verbose_name": (
             formset.model._meta.verbose_name if hasattr(formset, "model") else ""
         ),

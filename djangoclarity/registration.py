@@ -3,6 +3,7 @@ from django.forms.models import inlineformset_factory, modelform_factory
 from django.urls import path
 from django.views.generic import RedirectView
 
+from .dataclasses import ReadOnlyField
 from .views import (
     DjangoClarityAppIndexView,
     DjangoClarityIndexView,
@@ -15,30 +16,54 @@ from .views import (
 
 def create_inline_formsets(model, inlines):
     formsets = []
+    formset_layouts = []
     for inline in inlines:
-        # Meta = type(
-        #     "Meta",
-        #     (),
-        #     {
-        #         "model": inline.model,
-        #         "fields": inline.fields,
-        #         "widgets": inline.widgets,
-        #     },
-        # )
-        # attrs = {"Meta": Meta}
+        # All fields
+        if inline.fields == "__all__":
+            # Show only the editable fields, except for the FK relationship to the model
+            formset_layout = tuple(
+                field.name
+                for field in inline.model._meta.fields
+                if field.editable
+                and getattr(field, "related_model", None) != model
+                and getattr(field, "name", None) != "id"
+            )
 
-        # formset_form_class = type(
-        #     f"DjangoClarity{model._meta.model_name}{inline.model._meta.model_name}InlineModelForm",
-        #     (ModelForm,),
-        #     attrs,
-        # )
+            # Send the string "__all__" to the model form factory
+            formset_form_class = modelform_factory(
+                inline.model,
+                ModelForm,
+                fields=inline.fields,
+                widgets=inline.widgets,
+            )
 
-        formset_form_class = modelform_factory(
-            inline.model,
-            ModelForm,
-            fields=inline.fields,
-            widgets=inline.widgets,
-        )
+        # Select subset of fields (both editable and readonly)
+        else:
+            # Show both editable and readonly fields, except for the FK relationship
+            # to the model, but mark which ones are readonly
+            formset_layout = tuple(
+                (
+                    ReadOnlyField(name=field, label_tag=field, value=None)
+                    if field in inline.readonly_fields
+                    else field
+                )
+                for field in inline.fields
+                if getattr(field, "related_model", None) != model
+                and getattr(field, "name", None) != "id"
+            )
+
+            # Send only the editable fields in to the model form factory
+            # TODO: put this in a try..except to properly show the error if a readonly field is not in readonly_fields
+            formset_form_class = modelform_factory(
+                inline.model,
+                ModelForm,
+                fields=tuple(
+                    field
+                    for field in inline.fields
+                    if field not in inline.readonly_fields
+                ),
+                widgets=inline.widgets,
+            )
 
         formsets.append(
             inlineformset_factory(
@@ -48,66 +73,59 @@ def create_inline_formsets(model, inlines):
                 extra=inline.extra,
             )
         )
+        formset_layouts.append(formset_layout)
 
-    return formsets
+    return formsets, formset_layouts
 
 
 def create_model_form_class(model, model_admin):
     # url_name_prefix = f"djangoclarity-{model._meta.app_label}-{model._meta.model_name}"
 
-    # # Create the Meta class dynamically
-    # Meta = type(
-    #     "Meta",
-    #     (),
-    #     {
-    #         "model": model,
-    #         # "fields": tuple(
-    #         #     field
-    #         #     for field in model_admin.fields
-    #         #     if field not in model_admin.readonly_fields
-    #         # ),
-    #         "fields": model_admin.fields,
-    #         "widgets": model_admin.widgets,
-    #         # "readonly_fields": model_admin.readonly_fields,
-    #         "url_names": {
-    #             "create_url_name": f"{url_name_prefix}-create",
-    #             "delete_url_name": f"{url_name_prefix}-delete",
-    #             "index_url_name": f"{url_name_prefix}-index",
-    #             "update_url_name": f"{url_name_prefix}-update",
-    #         },
-    #     },
-    # )
+    # All fields
+    if model_admin.fields == "__all__":
+        # Show only the editable fields
+        # TODO: currently this shows the ID field, which we should maybe not show?
+        form_layout = tuple(
+            field.name
+            for field in model._meta.fields
+            if field.editable and field.name != "id"
+        )
 
-    # Create the new ModelForm class
-    # attrs = {"Meta": Meta}
-    # FormClass = type(
-    #     f"DjangoClarity{model._meta.app_label}{model._meta.model_name}ModelForm",
-    #     (ModelForm,),
-    #     attrs,
-    # )
+        # Send the string "__all__" to the model form factory
+        FormClass = modelform_factory(
+            model,
+            ModelForm,
+            fields=model_admin.fields,
+            widgets=model_admin.widgets,
+        )
 
-    FormClass = modelform_factory(
-        model,
-        ModelForm,
-        fields=model_admin.fields,
-        widgets=model_admin.widgets,
-    )
+    # Select subset of fields (both editable and readonly)
+    else:
+        # Show both editable and readonly fields, but mark which ones are readonly
+        form_layout = tuple(
+            (
+                ReadOnlyField(name=field, label_tag=field, value=None)
+                if field in model_admin.readonly_fields
+                else field
+            )
+            for field in model_admin.fields
+            if field != "id"
+        )
 
-    # # Extend the class to add in the __init__ function for any readonly fields
-    # class FormClass(FormClass):
-    #     def __init__(self, *args, **kwargs):
-    #         super().__init__(*args, **kwargs)
-    #         if self.instance:
-    #             for readonly_field in model_admin.readonly_fields:
-    #                 self.fields[readonly_field].disabled = True
-    #                 self.fields[readonly_field].initial = getattr(
-    #                     self.instance, readonly_field
-    #                 )
+        # Send only the editable fields in to the model form factory
+        # TODO: put this in a try..except to properly show the error if a readonly field is not in readonly_fields
+        FormClass = modelform_factory(
+            model,
+            ModelForm,
+            fields=tuple(
+                field
+                for field in model_admin.fields
+                if field not in model_admin.readonly_fields
+            ),
+            widgets=model_admin.widgets,
+        )
 
-    # for readonly_field in model_admin.readonly_fields:
-    #     setattr(form_class, readonly_field, )
-
-    return FormClass
+    return FormClass, form_layout
 
 
 class ModelAdmin:
@@ -151,12 +169,14 @@ class AdminSite:
                 app_label_models_dict[model._meta.app_label] = []
             app_label_models_dict[model._meta.app_label].append(model)
 
-            formsets = create_inline_formsets(model, model_admin.inlines)
+            form_class, form_layout = create_model_form_class(model, model_admin)
+            formsets, formset_layouts = create_inline_formsets(
+                model, model_admin.inlines
+            )
             create_view_class = model_admin.create_view_class
             delete_view_class = model_admin.delete_view_class
             index_view_class = model_admin.index_view_class
             update_view_class = model_admin.update_view_class
-            form = create_model_form_class(model, model_admin)
             url_prefix = f"{model._meta.app_label}/{model._meta.model_name}"
 
             url_name_prefix = (
@@ -168,33 +188,49 @@ class AdminSite:
                 path(
                     f"{url_prefix}/add/",
                     create_view_class.as_view(
-                        form_class=form, formsets=formsets, namespace=self._namespace
+                        form_class=form_class,
+                        form_layout=form_layout,
+                        formsets=formsets,
+                        formset_layouts=formset_layouts,
+                        namespace=self._namespace,
                     ),
-                    # name=form.Meta.url_names["create_url_name"],
+                    # name=form_class.Meta.url_names["create_url_name"],
                     name=f"{url_name_prefix}-create",
                 ),
                 path(
                     f"{url_prefix}/<int:pk>/delete/",
                     delete_view_class.as_view(
-                        form_class=form, formsets=formsets, namespace=self._namespace
+                        form_class=form_class,
+                        form_layout=form_layout,
+                        formsets=formsets,
+                        formset_layouts=formset_layouts,
+                        namespace=self._namespace,
                     ),
-                    # name=form.Meta.url_names["delete_url_name"],
+                    # name=form_class.Meta.url_names["delete_url_name"],
                     name=f"{url_name_prefix}-delete",
                 ),
                 path(
                     f"{url_prefix}/",
                     index_view_class.as_view(
-                        form_class=form, formsets=formsets, namespace=self._namespace
+                        form_class=form_class,
+                        form_layout=form_layout,
+                        formsets=formsets,
+                        formset_layouts=formset_layouts,
+                        namespace=self._namespace,
                     ),
-                    # name=form.Meta.url_names["index_url_name"],
+                    # name=form_class.Meta.url_names["index_url_name"],
                     name=f"{url_name_prefix}-index",
                 ),
                 path(
                     f"{url_prefix}/<int:pk>/change/",
                     update_view_class.as_view(
-                        form_class=form, formsets=formsets, namespace=self._namespace
+                        form_class=form_class,
+                        form_layout=form_layout,
+                        formsets=formsets,
+                        formset_layouts=formset_layouts,
+                        namespace=self._namespace,
                     ),
-                    # name=form.Meta.url_names["update_url_name"],
+                    # name=form_class.Meta.url_names["update_url_name"],
                     name=f"{url_name_prefix}-update",
                 ),
                 # Redirect paths
