@@ -3,6 +3,7 @@ from django.forms.models import inlineformset_factory, modelform_factory
 from django.urls import path
 from django.views.generic import RedirectView
 
+from .dataclasses import ReadOnlyField
 from .views import (
     DjangoClarityAppIndexView,
     DjangoClarityIndexView,
@@ -36,10 +37,14 @@ def create_inline_formsets(model, inlines):
 
         # All fields
         if inline.fields == "__all__":
-            # Show only the editable fields
+            # Show only the editable fields, except for the FK relationship to the model
             # TODO: currently this shows the ID field, which we should maybe not show?
             formset_layout = tuple(
-                field.name for field in inline.model._meta.fields if field.editable
+                field.name
+                for field in inline.model._meta.fields
+                if field.editable
+                and field.related_model != model
+                and field.name != "id"
             )
 
             # Send the string "__all__" to the model form factory
@@ -52,9 +57,12 @@ def create_inline_formsets(model, inlines):
 
         # Select subset of fields (both editable and readonly)
         else:
-            # Show both editable and readonly fields, but mark which ones are readonly
-            # TODO probably use a dataclass to mark the readonly fields
-            formset_layout = tuple(field for field in inline.fields)
+            # Show both editable and readonly fields, except for the FK relationship to the model, but mark which ones are readonly
+            formset_layout = tuple(
+                ReadOnlyField(field) if field in inline.readonly_fields else field
+                for field in inline.fields
+                if field.related_model != model and field.name != "id"
+            )
 
             # Send only the editable fields in to the model form factory
             # TODO: put this in a try..except to properly show the error if a readonly field is not in readonly_fields
@@ -122,7 +130,9 @@ def create_model_form_class(model, model_admin):
         # Show only the editable fields
         # TODO: currently this shows the ID field, which we should maybe not show?
         form_layout = tuple(
-            field.name for field in model._meta.fields if field.editable
+            field.name
+            for field in model._meta.fields
+            if field.editable and field.name != "id"
         )
 
         # Send the string "__all__" to the model form factory
@@ -136,8 +146,11 @@ def create_model_form_class(model, model_admin):
     # Select subset of fields (both editable and readonly)
     else:
         # Show both editable and readonly fields, but mark which ones are readonly
-        # TODO probably use a dataclass to mark the readonly fields
-        form_layout = tuple(field for field in model_admin.fields)
+        form_layout = tuple(
+            ReadOnlyField(field) if field in model_admin.readonly_fields else field
+            for field in model_admin.fields
+            # if field != "id"
+        )
 
         # Send only the editable fields in to the model form factory
         # TODO: put this in a try..except to properly show the error if a readonly field is not in readonly_fields

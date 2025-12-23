@@ -1,5 +1,7 @@
 from django import template
 
+from ..dataclasses import ReadOnlyField
+
 register = template.Library()
 
 
@@ -25,28 +27,61 @@ def djangoclarity_render_field(field):
 def djangoclarity_render_form(
     form, form_layouts, form_layout_counter, is_formset_form=False
 ):
-    print("djangoclarity_render_form")
-    print("form", form)
-    print("form_layouts", form_layouts)
-    print("form_layout_counter", form_layout_counter)
-    print("is_formset_form", is_formset_form)
-    print("--------")
-
     form_layout = form_layouts[form_layout_counter]
 
-    # print(form_layout)
+    print(form_layout)
+    print([field.name for field in form.visible_fields()])
+    print([field.name for field in form.hidden_fields()])
+
+    # Make a dictionary for faster lookup of the visible fields
+    visible_fields_dict = {field.name: field for field in form.visible_fields()}
+
+    # Get the desired fields
+    # Form
+    if not is_formset_form:
+        visible_fields = []
+        for field_name in form_layout:
+            # if visible_fields_dict.get(field_name):
+            visible_fields.append(
+                (
+                    visible_fields_dict[
+                        (
+                            field_name.field
+                            if field_name.__class__ == ReadOnlyField
+                            else field_name
+                        )
+                    ],
+                    field_name.__class__ == ReadOnlyField,
+                )
+            )
+
+    # Formset
+    else:
+        visible_fields = []
+        for field_name in form_layout:
+            # if visible_fields_dict.get(field_name):
+            visible_fields.append(
+                (
+                    visible_fields_dict[field_name],
+                    field_name.__class__ == ReadOnlyField,
+                )
+            )
 
     # Filter the visible fields (exclude the DELETE if it's a formset form)
-    visible_fields = []
-    for field in form.visible_fields():
-        if not is_formset_form or (is_formset_form and field.name != "DELETE"):
-            visible_fields.append(field)
+    # visible_fields = []
+    # for field in form.visible_fields():
+    #     if not is_formset_form or (is_formset_form and field.name != "DELETE"):
+    #         visible_fields.append(field)
+
+    print(visible_fields)
 
     # Calculate the col_md_width for each field
     field_list = []
     visible_count = len(visible_fields)
 
-    for idx, field in enumerate(visible_fields):
+    for idx, field_readonly in enumerate(visible_fields):
+        field, readonly = field_readonly
+
         # Use the custom setting, if provided
         col_md_width = field.field.widget.attrs.get("col_md_width")
 
@@ -58,7 +93,9 @@ def djangoclarity_render_form(
             else:
                 col_md_width = "6"
 
-        field_list.append({"field": field, "col_md_width": col_md_width})
+        field_list.append(
+            {"field": field, "col_md_width": col_md_width, "readonly": readonly}
+        )
 
     return {
         "visible_fields": field_list,
@@ -77,13 +114,6 @@ def djangoclarity_render_form(
 def djangoclarity_render_formset_form(
     formset_form, formset_layouts, layout_counter, new_form=False
 ):
-    print("djangoclarity_render_formset_form")
-    print("formset_form", formset_form)
-    print("formset_layouts", formset_layouts)
-    print("layout_counter", layout_counter)
-    print("new_form", new_form)
-    print("--------")
-
     return {
         "formset_form": formset_form,
         "formset_layouts": formset_layouts,
