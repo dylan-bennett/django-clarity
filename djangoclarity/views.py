@@ -49,7 +49,7 @@ class DjangoClarityIndexView(TemplateView):
 
             app_models_dict["app_label"] = {
                 "url": reverse(f"{self.namespace}:djangoclarity-{app_label}-index"),
-                "title": app_label.upper(),
+                "upper": app_label.upper(),
             }
 
             app_models_dict["models"] = []
@@ -109,8 +109,8 @@ class DjangoClarityAppIndexView(TemplateView):
 
         context["app_label"] = {
             "url": reverse(f"{self.namespace}:djangoclarity-{self.app_label}-index"),
-            "title": self.app_label.upper(),
-            "window_title": self.app_label.title(),
+            "upper": self.app_label.upper(),
+            "title": self.app_label.title(),
         }
 
         context["models"] = []
@@ -279,6 +279,19 @@ class DjangoClarityModelBaseView:
                     )
 
         return all_errors
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Info for the breadcrumb menu
+        context["app_label"] = {
+            "url": reverse(
+                f"{self.namespace}:djangoclarity-{self.model._meta.app_label}-index"
+            ),
+            "title": self.model._meta.app_label.title(),
+        }
+
+        return context
 
 
 class DjangoClarityModelCreateView(DjangoClarityModelBaseView, CreateView):

@@ -11,16 +11,25 @@
     {% csrf_token %}
 
     <!-- Page header -->
-    <div class="d-flex align-items-center justify-content-between w-100 mb-3">
-      <h1>Update {{ model_verbose_name|title }}</h1>
+    <div class="mb-4">
+      <!-- Breadcrumb menu -->
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'djangoclarity:djangoclarity-index' %}">Home</a></li>
+          <li class="breadcrumb-item"><a href="{{ app_label|get_item:'url' }}">{{ app_label|get_item:"title" }}</a></li>
+          <li class="breadcrumb-item"><a href="{{ index_url }}">{{ model_verbose_name|title }}</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Update</li>
+        </ol>
+      </nav>
 
-      <!-- Navigation -->
-      <div class="d-flex align-items-center">
-        {% block index_links %}
-        <a href="{{ index_url }}" class="me-2">Back To Index</a>
-        {% endblock index_links %}
-        {% bootstrap_button "Update" button_type="submit" button_class="btn-success me-2" %}
-        {% bootstrap_button "Delete" href=delete_url button_class="btn-danger" %}
+      <div class="d-flex align-items-center justify-content-between w-100">
+        <h1>Update {{ model_verbose_name|title }}</h1>
+
+        <!-- Navigation -->
+        <div class="d-flex align-items-center">
+          {% bootstrap_button "Update" button_type="submit" button_class="btn-success me-2" %}
+          {% bootstrap_button "Delete" href=delete_url button_class="btn-danger" %}
+        </div>
       </div>
     </div>
 
