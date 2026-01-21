@@ -7,7 +7,7 @@
   {% comment %}
   Just display the string of the readonly field. It's not part of the form, so it has no widget to render.
   {% endcomment %}
-  <div id="id_{{ field.name }}" class="text-muted">{{ field.value }}</div>
+  <div id="id_{{ field.name }}" class="text-muted">{% if field.value %}{{ field.value }}{% else %}-{% endif %}</div>
 
   {# If the field has help text, display it below the input with proper accessibility attributes #}
   {% if field.help_text %}
