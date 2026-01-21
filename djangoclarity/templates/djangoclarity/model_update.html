@@ -2,7 +2,7 @@
 {% load django_bootstrap5 djangoclarity_extras %}
 
 {% block title %}
-{{ block.super }} | Update {{ model_verbose_name|title }}
+Update {{ object }} | {{ app_label|get_item:"title" }} | {{ block.super }}
 {% endblock %}
 
 {% block content %}

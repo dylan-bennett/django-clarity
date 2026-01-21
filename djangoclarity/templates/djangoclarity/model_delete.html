@@ -2,7 +2,7 @@
 {% load django_bootstrap5 djangoclarity_extras %}
 
 {% block title %}
-{{ block.super }} | Delete {{ model_verbose_name|title }}
+Delete {{ object }} | {{ app_label|get_item:"title" }} | {{ block.super }}
 {% endblock title %}
 
 {% block content %}

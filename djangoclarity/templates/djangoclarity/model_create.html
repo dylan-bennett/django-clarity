@@ -2,7 +2,7 @@
 {% load django_bootstrap5 djangoclarity_extras %}
 
 {% block title %}
-{{ block.super }} | Create {{ model_verbose_name|title }}
+Create {{ model_verbose_name|title }} | {{ app_label|get_item:"title" }} | {{ block.super }}
 {% endblock title %}
 
 {% block content %}

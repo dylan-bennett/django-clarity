@@ -2,7 +2,7 @@
 {% load django_bootstrap5 djangoclarity_extras %}
 
 {% block title %}
-{{ block.super }} | {{ model_verbose_name|title }} Index
+{{ model_verbose_name|title }} Index | {{ app_label|get_item:"title" }} | {{ block.super }}
 {% endblock title %}
 
 {% block content %}
