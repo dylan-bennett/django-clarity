@@ -2,15 +2,6 @@ from django import forms
 from django.conf import settings
 from django.contrib.admin.widgets import AdminFileWidget
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
-
-
-def thumbnail(image_path):
-    return (
-        '<img src="{}" class="imageupload-thumbnail" style="max-width: 100%;">'.format(
-            image_path
-        )
-    )
 
 
 class ThumbnailImageWidget(AdminFileWidget):
@@ -24,38 +15,41 @@ class ThumbnailImageWidget(AdminFileWidget):
             final_attrs.update(attrs)
         super().__init__(attrs=final_attrs)
 
+    def _thumbnail(self, image_path):
+        return format_html(
+            '<img src="{}" class="imageupload-thumbnail" style="max-width: 100%;">',
+            image_path,
+        )
+
     def render(self, name, value, attrs=None, renderer=None):
-        output = []
+        # We want to wrap the thumbnail, so add in the beginning of the wrapper
+        output = format_html('<div class="thumbnail-image-widget-container">')
+
+        # Put in the thumbnail, if it exists
         if value:
-            file_path = "{}{}".format(getattr(settings, "MEDIA_URL", "/media/"), value)
+            file_path = f"{getattr(settings, "MEDIA_URL", "/media/")}{value}"
             try:
-                output.append(
-                    '<a target="_blank" href="{}" class="imageupload-thumbcontainer">{}</a>'.format(
-                        file_path, thumbnail(file_path)
-                    )
+                output += format_html(
+                    (
+                        '<a target="_blank" href="{}" '
+                        'class="imageupload-thumbcontainer">{}</a>'
+                    ),
+                    file_path,
+                    self._thumbnail(file_path),
                 )
             except IOError:
-                output.append(
-                    '{} <a target="_blank" href="{}">{}</a> <br />{} '.format(
-                        "Currently:", file_path, value, "Change:"
-                    )
-                )
-        else:
-            output.append(
-                thumbnail(
-                    "{}admin_tools/images/missing_image.png".format(
-                        getattr(settings, "STATIC_URL", "/static/")
-                    )
-                )
-            )
+                output += format_html("Unable to display image preview")
 
-        output.append(
-            '<div class="imageupload-widget"><p class="file-upload">%s</p></div>'
-            % super(ThumbnailImageWidget, self).render(name, value, attrs)
+        # Add the Django File Upload widget below the thumbnail
+        output += format_html(
+            super(ThumbnailImageWidget, self).render(name, value, attrs)
         )
-        return mark_safe(
-            '<div class="thumbnail-image-widget-container">%s</div>' % "".join(output)
-        )
+
+        # Finally, put in the ending of the wrapper
+        output += format_html("</div>")
+
+        # Since all HTML code has been formatted, this is safe to return as-is
+        return output
 
 
 class RadioButtonsWidget(forms.RadioSelect):
@@ -64,8 +58,8 @@ class RadioButtonsWidget(forms.RadioSelect):
     Mimics the appearance of b-form-radio-group with buttons.
 
     This widget creates a group of styled buttons that function as radio buttons.
-    When a button is clicked, it becomes active and the corresponding radio input is selected.
-    The buttons are styled using Bootstrap classes.
+    When a button is clicked, it becomes active and the corresponding radio input
+    is selected. The buttons are styled using Bootstrap classes.
     """
 
     def __init__(self, attrs=None, choices=(), button_variant="outline-primary"):
@@ -109,11 +103,13 @@ class RadioButtonsWidget(forms.RadioSelect):
         if not id_:
             id_ = "id_%s" % name
 
-        # Start building the HTML output
-        output = [
-            '<div class="form-group">',
-            f'  <div class="btn-group" role="group" aria-label="{name}">',
-        ]
+        # Start the Bootstrap form group
+        output = format_html('<div class="form-group">')
+
+        # Start the Bootstrap button group
+        output += format_html(
+            '<div class="btn-group" role="group" aria-label="{}">', name
+        )
 
         # First, create all the visible button labels
         for i, (option_value, option_label) in enumerate(choices):
@@ -123,9 +119,9 @@ class RadioButtonsWidget(forms.RadioSelect):
             # Add 'active' class if this option is currently selected
             active_class = " active" if is_selected else ""
 
-            # Create the button label with Bootstrap styling
-            # btn-outline-{variant} creates an outlined button style
-            button = format_html(
+            # Add the button label with Bootstrap styling to the HTML.
+            # `btn-outline-{variant}` creates an outlined button style.
+            output += format_html(
                 '<label for="{}" class="btn btn-{} btn-outline-{}{}">{}</label>',
                 radio_id,
                 self.button_variant,
@@ -134,11 +130,8 @@ class RadioButtonsWidget(forms.RadioSelect):
                 option_label,
             )
 
-            # Add the button to the output
-            output.append(button)
-
         # Close the button group
-        output.append("</div>")
+        output += format_html("</div>")
 
         # Now add all the hidden radio inputs that correspond to each button
         for i, (option_value, option_label) in enumerate(choices):
@@ -146,25 +139,29 @@ class RadioButtonsWidget(forms.RadioSelect):
             is_selected = str(value) == str(option_value)
 
             # Create a hidden radio input that will be controlled by the button clicks
-            radio_input = format_html(
-                '<input type="radio" name="{}" value="{}" id="{}" {} style="display:none;">',
+            output += format_html(
+                (
+                    '<input type="radio" name="{}" value="{}" id="{}" {} '
+                    'style="display:none;">'
+                ),
                 name,
                 option_value,
                 radio_id,
                 "checked" if is_selected else "",
             )
 
-            output.append(radio_input)
+        # Close the form group
+        output += format_html("</div>")
 
-        output.append("</div>")
-
-        # Add JavaScript to handle the button clicks and update the active state
-        output.append(
-            f"""
+        # Finally, add JavaScript to handle the button clicks
+        # and update the active state
+        js_script = """
         <script>
         document.addEventListener('DOMContentLoaded', function() {{
             // Find the radio group container and all button labels
-            const radioGroup = document.querySelector('[name="{name}"]').closest('.form-group').querySelector('.btn-group');
+            const radioGroup = document.querySelector('[name="{}"]')
+                               .closest('.form-group')
+                               .querySelector('.btn-group');
             const buttons = radioGroup.querySelectorAll('label');
 
             // Add click event listener to each button
@@ -182,7 +179,7 @@ class RadioButtonsWidget(forms.RadioSelect):
         }});
         </script>
         """
-        )
+        output += format_html(js_script, name)
 
-        # Return the complete HTML as a marked safe string
-        return mark_safe("\n".join(output))
+        # Since all HTML code has been formatted, this is safe to return as-is
+        return output
