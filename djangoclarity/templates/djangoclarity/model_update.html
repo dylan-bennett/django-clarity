@@ -59,12 +59,9 @@ Update {{ object }} | {{ app_label|get_item:"title" }} | {{ block.super }}
     {% endblock render_formsets_block %}
 
     <!-- Navigation at the bottom -->
-    <div class="d-flex justify-content-end w-100">
-      <div class="d-flex align-items-center">
-        <a href="{{ index_url }}" class="me-2">Back To Index</a>
-        {% bootstrap_button "Update" button_type="submit" button_class="btn-success me-2" %}
-        {% bootstrap_button "Delete" href=delete_url button_class="btn-danger" %}
-      </div>
+    <div class="d-flex align-items-center justify-content-end w-100">
+      {% bootstrap_button "Update" button_type="submit" button_class="btn-success me-2" %}
+      {% bootstrap_button "Delete" href=delete_url button_class="btn-danger" %}
     </div>
   </form>
 </div>
