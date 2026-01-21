@@ -299,7 +299,7 @@ class DjangoClarityModelCreateView(DjangoClarityModelBaseView, CreateView):
     Base view for creating a parent model instance (form).
     """
 
-    template_name = "djangoclarity/base_create_template.html"
+    template_name = "djangoclarity/model_create.html"
     formsets = []
 
     def get_context_data(self, **kwargs):
@@ -345,7 +345,7 @@ class DjangoClarityModelUpdateView(DjangoClarityModelBaseView, UpdateView):
     and children model instances (formsets).
     """
 
-    template_name = "djangoclarity/base_update_template.html"
+    template_name = "djangoclarity/model_update.html"
     formsets = []
 
     def get_context_data(self, **kwargs):
@@ -431,7 +431,7 @@ class DjangoClarityModelUpdateView(DjangoClarityModelBaseView, UpdateView):
 
 
 class DjangoClarityModelListView(DjangoClarityModelBaseView, ListView):
-    template_name = "djangoclarity/base_index_template.html"
+    template_name = "djangoclarity/model_index.html"
     items_per_page = 10
     order_by_fields = ("id",)
     paginate_by = 10
@@ -713,7 +713,7 @@ class DjangoClarityModelListView(DjangoClarityModelBaseView, ListView):
 
 
 class DjangoClarityModelDeleteView(DjangoClarityModelBaseView, DeleteView):
-    template_name = "djangoclarity/base_delete_template.html"
+    template_name = "djangoclarity/model_delete.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
